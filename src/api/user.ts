@@ -1,6 +1,7 @@
 import { Router, Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
+import argon2 from "argon2";
 
 export const registerScheme = yup.object({
   id: yup.string().required(),
@@ -10,6 +11,8 @@ export const registerScheme = yup.object({
   nickname: yup.string().required(),
   birth: yup.date().required(),
   phone: yup.string().required(),
+  schoolgrade: yup.number().required(),
+  schoolclass: yup.number().required(),
 });
 
 async function register(req: Request, res: Response) {
@@ -22,12 +25,31 @@ async function register(req: Request, res: Response) {
       nickname,
       birth,
       phone,
+      schoolgrade,
+      schoolclass,
     } = registerScheme.validateSync(req.body);
-    const rows = await db(
-      "INSERT INTO user(id, password, email, name, nickname, birth, phone) VALUES(?,?,?,?,?,?,?)",
-      [id, password, email, name, nickname, birth, phone]
-    );
-    res.send(rows);
+    const search = await db("SELECT id FROM user WHERE id=?", [id]);
+
+    const hashPassword = await argon2.hash(password);
+    if (!search[0]) {
+      const rows = await db(
+        "INSERT INTO user(id, password, email, name, nickname, birth, phone, schoolgrade, schoolclass) VALUES(?,?,?,?,?,?,?,?,?)",
+        [
+          id,
+          hashPassword,
+          email,
+          name,
+          nickname,
+          birth,
+          phone,
+          schoolgrade,
+          schoolclass,
+        ]
+      );
+      res.send({ msg: "회원가입 성공" });
+    } else {
+      res.status(400).send({ msg: "이미 존재하는 ID" });
+    }
   } catch (error) {
     res.status(400).send({ error: "에러" });
   }
@@ -43,7 +65,15 @@ async function login(req: Request, res: Response) {
     const { id, password } = loginScheme.validateSync(req.body);
     const rows = await db("SELECT * FROM user WHERE id=?", [id]);
     if (!rows[0]) res.status(400).send("잘못된 ID입니다.");
-    else if (rows[0].password === password) {
+    else if (await argon2.verify(rows[0].password, password)) {
+      req.session.userId = id;
+      req.session.password = password;
+      req.session.isLogedIn = true;
+      console.log({
+        id: req.session.userId,
+        password: req.session.password,
+        logined: req.session.isLogedIn,
+      });
       res.send("로그인 성공");
     } else {
       res.status(400).send("잘못된 Password입니다.");
@@ -51,7 +81,25 @@ async function login(req: Request, res: Response) {
   } catch (error) {}
 }
 
+async function logout(req: Request, res: Response) {
+  req.session.destroy((err) => {
+    if (err) throw err;
+  });
+  res.send({ msg: "로그아웃 했습니다." });
+}
+
+async function userOut(req: Request, res: Response) {
+  try {
+    const rows = await db("DELETE FROM user WHERE id=?", [req.session.userId]);
+    res.send({ msg: "탈퇴성공" });
+  } catch (error) {
+    res.status(400).send({ error: "탈퇴하는데 실패했습니다." });
+  }
+}
+
 const router = Router();
 router.post("/register", register);
 router.post("/login", login);
+router.post("/logout", logout);
+router.delete("/quit", userOut);
 export default router;

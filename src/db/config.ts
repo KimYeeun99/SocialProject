@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 const config = {
   /* don't expose password or any sensitive info, done only for demo */
   host: process.env.DB_HOST,

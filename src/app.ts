@@ -1,15 +1,8 @@
 import express, { Request, Response, NextFunction } from "express";
-import bodyParser from "body-parser";
-import { login } from "./login";
-import { post } from "./post";
-import path from "path";
-import createError from "http-errors";
 import session from "express-session";
-import { Db } from "mongodb";
-import mysql from "mysql";
 import { db } from "./db/db";
 import user from "./api/user";
-import { User } from "./model/user";
+import "dotenv/config";
 
 const app = express();
 
@@ -34,8 +27,7 @@ app.use(
 );
 
 app.get("/", async (req, res) => {
-  console.log(req.body.id);
-  const rows = await db("SELECT * FROM user WHERE id=?", [req.body.id]);
+  const rows = await db("SELECT * FROM user", []);
   const user1 = rows[0].id;
   console.log(user1);
   res.send(rows);
