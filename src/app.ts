@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { db } from "./db/db";
 import user from "./api/user";
+import board from "./api/board";
 import "dotenv/config";
 
 const app = express();
@@ -34,6 +35,7 @@ app.get("/", async (req, res) => {
 });
 
 app.use("/api", user);
+app.use("/api/board", board);
 
 app.listen(app.get("port"), () => {
   console.log("start");
