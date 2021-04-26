@@ -3,23 +3,20 @@ import * as yup from "yup";
 import { db } from "../db/db";
 
 export const replyScheme = yup.object({
-    body: yup.string().required(),
-    good: yup.number().default(0)
+    body: yup.string().required()
 });
-
 
 async function insertComment(req:Request, res: Response) {
     try{
         const {
-            body,
-            good
+            body
         } = replyScheme.validateSync(req.body);
 
-        const board_id = req.body.boardId;
+        const board_id = req.params.boardid;
         const user_id = req.session.userId;
 
-        const rows = await db('INSERT INTO reply (body, user_id, good, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?, ?)',
-         [body, user_id, good, board_id, 0, 0]);
+        const rows = await db('INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)',
+         [body, user_id, board_id, 0, 0]);
 
         const data = JSON.parse(JSON.stringify(rows));
 
@@ -38,17 +35,16 @@ async function insertComment(req:Request, res: Response) {
 
 async function insertSubComment(req:Request, res: Response) {
     try{
-        const parent_id = req.params.replyId;
-        const board_id = req.body.boardId;
+        const parent_id = req.params.replyid;
+        const board_id = req.params.boardid;
         const user_id = req.session.userId;
         const {
-            body,
-            good,
+            body
         } = replyScheme.validateSync(req.body);
 
 
-        const rows = await db('INSERT INTO reply (body, user_id, good, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?, ?)',
-         [body, user_id, good, board_id, parent_id, 1]);
+        const rows = await db('INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)',
+         [body, user_id, board_id, parent_id, 1]);
 
         res.json({
             success: true,
@@ -65,8 +61,8 @@ async function insertSubComment(req:Request, res: Response) {
 
 async function readAllComment(req:Request, res: Response) {
     try{
-        const boardId = req.body.boardId;
-        const rows = await db("SELECT * FROM reply WHERE board_id=? order by parent_id, level, regdate", [boardId]);
+        const boardId = req.params.boardid;
+        const rows = await db("select reply.*, ifNull(T.goods, 0) as goods from reply left join (select reply_id, count(reply_id) as goods from replygood group by reply_id) as T on T.reply_id=reply.reply_id where board_id=? order by parent_id, level, regdate", [boardId]);
 
         var data = JSON.parse(JSON.stringify(rows));
 
@@ -97,10 +93,9 @@ async function readAllComment(req:Request, res: Response) {
 async function updateComment(req: Request, res: Response){
     try{
         const user_id = req.session.userId;
-        const reply_id = req.params.replyId;
+        const reply_id = req.params.replyid;
         const {
-            body,
-            good,
+            body
         } = replyScheme.validateSync(req.body);
 
         const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
@@ -127,7 +122,7 @@ async function updateComment(req: Request, res: Response){
 async function deleteComment(req: Request, res: Response){
     try{
         const user_id = req.session.userId;
-        const reply_id = req.params.replyId;
+        const reply_id = req.params.replyid;
         const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
 
         if(!check[0]) return res.status(400).send({msg : '사용자가 일치하지 않습니다.'})
@@ -146,6 +141,32 @@ async function deleteComment(req: Request, res: Response){
     }
 }
 
+async function goodComment(req: Request, res: Response){
+    try{
+        const user_id = req.session.userId;
+        const reply_id = req.params.replyid;
+
+        const check = await db('SELECT good_id FROM ReplyGood WHERE reply_id=? and user_id=?',
+        [reply_id, user_id]);
+        
+        if(check[0]){
+            await db('DELETE FROM replygood WHERE good_id=?', [check[0].good_id]);
+        } else{
+            await db('INSERT INTO replygood (user_id, reply_id) VALUES (?, ?)', [user_id, reply_id]);
+        }
+
+        res.json({
+            success: true
+        })
+
+    } catch(error){
+        res.status(400).send({
+            success: false,
+        })
+    }
+}
+
+
 function loginCheck(req: Request, res: Response, next: NextFunction){
     if(req.session.isLogedIn){
       next();
@@ -159,11 +180,12 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
 
 
 const router = Router();
-router.post('/', loginCheck, insertComment);
-router.post('/:replyId', loginCheck, insertSubComment);
-router.get('/', readAllComment);
-router.put('/:replyId', loginCheck, updateComment);
-router.delete('/:replyId', loginCheck, deleteComment);
+router.get('/good/:boardid/:replyid', loginCheck, goodComment);
+router.post('/:boardid', loginCheck, insertComment);
+router.post('/:boardid/:replyid', loginCheck, insertSubComment);
+router.get('/:boardid', readAllComment);
+router.put('/:boardid/:replyid', loginCheck, updateComment);
+router.delete('/:boardid/:replyid', loginCheck, deleteComment);
 
 export default router
 
