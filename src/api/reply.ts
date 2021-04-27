@@ -62,7 +62,7 @@ async function insertSubComment(req:Request, res: Response) {
 async function readAllComment(req:Request, res: Response) {
     try{
         const boardId = req.params.boardid;
-        const rows = await db("select reply.*, ifNull(T.goods, 0) as goods from reply left join (select reply_id, count(reply_id) as goods from replygood group by reply_id) as T on T.reply_id=reply.reply_id where board_id=? order by parent_id, level, regdate", [boardId]);
+        const rows = await db(`SELECT * FROM reply where board_id=? order by parent_id, level, regdate`, [boardId]);
 
         var data = JSON.parse(JSON.stringify(rows));
 
@@ -141,6 +141,24 @@ async function deleteComment(req: Request, res: Response){
     }
 }
 
+async function goodCount(req: Request, res: Response){
+    try{
+        const replyId = req.params.replyid;
+        const rows = await db('select count(reply_id) as count from replygood where reply_id=? group by reply_id', [replyId]);
+        
+        if(rows[0])
+            res.json(rows);
+        else
+            res.send({
+                count : 0
+            })
+    } catch(error){
+        res.status(400).send({
+            success: false
+        })
+    }
+}
+
 async function goodComment(req: Request, res: Response){
     try{
         const user_id = req.session.userId;
@@ -151,13 +169,19 @@ async function goodComment(req: Request, res: Response){
         
         if(check[0]){
             await db('DELETE FROM replygood WHERE good_id=?', [check[0].good_id]);
+            res.json({
+                success: true,
+                msg : '좋아요 취소 성공'
+            })
         } else{
             await db('INSERT INTO replygood (user_id, reply_id) VALUES (?, ?)', [user_id, reply_id]);
+            res.json({
+                success: true,
+                msg : '좋아요 성공'
+            })
         }
 
-        res.json({
-            success: true
-        })
+        
 
     } catch(error){
         res.status(400).send({
@@ -171,7 +195,7 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
     if(req.session.isLogedIn){
       next();
     } else{
-      return res.json({
+      res.status(400).send({
         success: false,
         msg: '로그인이 필요합니다'
       })
@@ -180,6 +204,7 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
 
 
 const router = Router();
+router.get('/goodcount/:replyid', goodCount);
 router.get('/good/:boardid/:replyid', loginCheck, goodComment);
 router.post('/:boardid', loginCheck, insertComment);
 router.post('/:boardid/:replyid', loginCheck, insertSubComment);
