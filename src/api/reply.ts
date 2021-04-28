@@ -141,6 +141,26 @@ async function deleteComment(req: Request, res: Response){
     }
 }
 
+async function replyCount(req: Request, res: Response){
+    try{
+      const boardId = req.params.boardid;
+      const rows = await db('select count(reply_id) as replycount from reply where board_id=?', [boardId]);
+  
+      if(rows[0]){
+        res.json(rows);
+      } else{
+        res.json({
+          replycount : 0
+        })
+      }
+    } catch(error){
+      res.status(400).send({
+        success: false
+      })
+    }
+    
+  }
+
 async function goodCount(req: Request, res: Response){
     try{
         const replyId = req.params.replyid;
@@ -204,8 +224,15 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
 
 
 const router = Router();
+
+//댓글 좋아요
 router.get('/goodcount/:replyid', goodCount);
-router.get('/good/:boardid/:replyid', loginCheck, goodComment);
+router.get('/good/:replyid', loginCheck, goodComment);
+
+//댓글 갯수
+router.get('/replycount/:boardid', replyCount);
+
+// 댓글 CRUD
 router.post('/:boardid', loginCheck, insertComment);
 router.post('/:boardid/:replyid', loginCheck, insertSubComment);
 router.get('/:boardid', readAllComment);
