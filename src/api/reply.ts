@@ -6,7 +6,7 @@ export const replyScheme = yup.object({
     body: yup.string().required()
 });
 
-async function insertComment(req:Request, res: Response) {
+async function insertReply(req:Request, res: Response) {
     try{
         const {
             body
@@ -22,18 +22,16 @@ async function insertComment(req:Request, res: Response) {
 
         await db('UPDATE reply SET parent_id=? WHERE reply_id=?', [data.insertId, data.insertId]);
         res.json({
-            success: true,
             msg: '댓글 작성 완료'
         })
     } catch(error){
         res.status(400).send({
-            success: false,
             msg: '댓글 작성 실패'
         })
     }
 }
 
-async function insertSubComment(req:Request, res: Response) {
+async function insertSubReply(req:Request, res: Response) {
     try{
         const parent_id = req.params.replyid;
         const board_id = req.params.boardid;
@@ -47,19 +45,17 @@ async function insertSubComment(req:Request, res: Response) {
          [body, user_id, board_id, parent_id, 1]);
 
         res.json({
-            success: true,
             msg: '댓글 작성 완료'
         })
 
     } catch(error){
         res.status(400).send({
-        success: false,
         msg: '댓글 작성 실패'
     })
     }
 }
 
-async function readAllComment(req:Request, res: Response) {
+async function readAllReply(req:Request, res: Response) {
     try{
         const boardId = req.params.boardid;
         const rows = await db(`SELECT * FROM reply where board_id=? order by parent_id, level, regdate`, [boardId]);
@@ -80,17 +76,15 @@ async function readAllComment(req:Request, res: Response) {
                 tree[cnt].child.push(data[d]);
             }
         }
-        res.json(tree);
-        
+        res.json(tree);     
     } catch(error){
         res.status(400).send({
-            success: false,
-            msg: '댓글 검색 실패'
+            msg: '댓글 조회 실패'
         })
     }
 }
 
-async function updateComment(req: Request, res: Response){
+async function updateReply(req: Request, res: Response){
     try{
         const user_id = req.session.userId;
         const reply_id = req.params.replyid;
@@ -100,18 +94,16 @@ async function updateComment(req: Request, res: Response){
 
         const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
 
-        if(!check[0]) return res.status(400).send({msg : '사용자가 일치하지 않습니다.'})
+        if(!check[0]) return res.status(401).send({msg : '사용자가 일치하지 않습니다.'})
 
         const rows = await db('UPDATE reply SET body=? WHERE reply_id = ?', [body, reply_id]);
 
         res.json({
-            success: true,
             msg: '댓글 수정 성공'
         });
     }
     catch(error){
         res.status(400).send({
-            success: false,
             msg: '댓글 수정 실패'
         })
     }
@@ -119,23 +111,21 @@ async function updateComment(req: Request, res: Response){
 
 }
 
-async function deleteComment(req: Request, res: Response){
+async function deleteReply(req: Request, res: Response){
     try{
         const user_id = req.session.userId;
         const reply_id = req.params.replyid;
         const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
 
-        if(!check[0]) return res.status(400).send({msg : '사용자가 일치하지 않습니다.'})
+        if(!check[0]) return res.status(401).send({msg : '사용자가 일치하지 않습니다.'})
 
         const rows = await db('DELETE FROM reply WHERE reply_id=? OR parent_id=?', [reply_id, reply_id]);
 
         res.json({
-            success: true,
             msg: '댓글 삭제 성공'
         })
     } catch(error){
         res.status(400).send({
-            success: false,
             msg: '댓글 삭제 실패'
         })
     }
@@ -155,7 +145,7 @@ async function replyCount(req: Request, res: Response){
       }
     } catch(error){
       res.status(400).send({
-        success: false
+        msg : '댓글 개수 조회 실패'
       })
     }
     
@@ -174,12 +164,12 @@ async function goodCount(req: Request, res: Response){
             })
     } catch(error){
         res.status(400).send({
-            success: false
+            msg : '좋아요 개수 조회 실패'
         })
     }
 }
 
-async function goodComment(req: Request, res: Response){
+async function goodReply(req: Request, res: Response){
     try{
         const user_id = req.session.userId;
         const reply_id = req.params.replyid;
@@ -190,33 +180,26 @@ async function goodComment(req: Request, res: Response){
         if(check[0]){
             await db('DELETE FROM replygood WHERE good_id=?', [check[0].good_id]);
             res.json({
-                success: true,
                 msg : '좋아요 취소 성공'
             })
         } else{
             await db('INSERT INTO replygood (user_id, reply_id) VALUES (?, ?)', [user_id, reply_id]);
             res.json({
-                success: true,
                 msg : '좋아요 성공'
             })
         }
-
-        
-
     } catch(error){
         res.status(400).send({
-            success: false,
+            msg : '좋아요 실패'
         })
     }
 }
-
 
 function loginCheck(req: Request, res: Response, next: NextFunction){
     if(req.session.isLogedIn){
       next();
     } else{
-      res.status(400).send({
-        success: false,
+      res.status(401).send({
         msg: '로그인이 필요합니다'
       })
     }
@@ -227,17 +210,17 @@ const router = Router();
 
 //댓글 좋아요
 router.get('/goodcount/:replyid', goodCount);
-router.get('/good/:replyid', loginCheck, goodComment);
+router.get('/good/:replyid', loginCheck, goodReply);
 
 //댓글 갯수
 router.get('/replycount/:boardid', replyCount);
 
 // 댓글 CRUD
-router.post('/:boardid', loginCheck, insertComment);
-router.post('/:boardid/:replyid', loginCheck, insertSubComment);
-router.get('/:boardid', readAllComment);
-router.put('/:boardid/:replyid', loginCheck, updateComment);
-router.delete('/:boardid/:replyid', loginCheck, deleteComment);
+router.post('/:boardid', loginCheck, insertReply);
+router.post('/:boardid/:replyid', loginCheck, insertSubReply);
+router.get('/:boardid', readAllReply);
+router.put('/:boardid/:replyid', loginCheck, updateReply);
+router.delete('/:boardid/:replyid', loginCheck, deleteReply);
 
 export default router
 

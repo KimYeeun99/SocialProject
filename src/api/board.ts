@@ -2,9 +2,6 @@ import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
 
-const limit = 10;
-
-
 export const boardScheme = yup.object({
   title: yup.string().required(),
   body: yup.string().required(),
@@ -20,15 +17,13 @@ async function insertBoard(req: Request, res: Response) {
     const user_id = req.session.userId;
 
     const rows = await db(
-      "INSERT INTO board (title, body, user_id, good) values (?, ?, ?, ?)", [title, body, user_id, 0]
+      "INSERT INTO board (title, body, user_id) values (?, ?, ?)", [title, body, user_id]
     )
     res.send({
-      success: true,
       msg: '글 생성 성공'
     });
   } catch(error){
     res.status(400).send({
-      success: false,
       msg: '글 생성 실패'
     })
     
@@ -38,13 +33,11 @@ async function insertBoard(req: Request, res: Response) {
 async function searchBoard(req: Request, res: Response){
   try{
     const title = req.query.title;
-    const offset = 0; // body에서 받아오기
-    const rows = await db(`select * from board where like ? order by regdate desc limit ? offset ?`,
-     ['%'+title+'%', limit, offset]);
+    const rows = await db(`select * from board where like ? order by regdate desc`,
+     ['%'+title+'%']);
     res.json(rows);
   } catch(error){
     res.status(400).send({
-      success: false,
       msg: '검색 실패'
     })
   }
@@ -53,13 +46,11 @@ async function searchBoard(req: Request, res: Response){
 
 async function readAllBoard(req: Request, res: Response) {
   try{
-    const offset = 0; // body에서 받아오기
-    const rows = await db(`select * from board order by regdate desc limit ? offset ?`, [limit, offset]);
+    const rows = await db(`select * from board order by regdate desc`, []);
     res.json(rows);
   } catch(error){
     res.status(400).send({
-      success: false,
-      msg: '조회 실패'
+      msg: '게시글 조회 실패'
     })
   }  
 }
@@ -68,23 +59,10 @@ async function readOneBoard(req:Request, res: Response) {
   try{
     const board_id = req.params.id;
     const rows = await db(`select * from board WHERE board_id=?`, [board_id]);
-
-    if(req.session.isLogedIn){
-      res.json({
-        rows,
-        isLogedIn: true
-      });
-    } else{
-      res.json({
-        rows,
-        isLogedIn: false
-      });
-    }
-    
+    res.json(rows);
   } catch(error){
     res.status(400).send({
-      success: false,
-      msg: '조회 실패'
+      msg: '게시글 상세조회 실패'
     });
   }
 }
@@ -100,16 +78,14 @@ async function updateBoard(req:Request, res: Response) {
      [board_id, req.session.userId]);
 
     if(!check[0])
-    return res.json({success: false, msg: '사용자가 일치하지 않습니다.'});
+    return res.status(401).send({msg: '사용자가 일치하지 않습니다.'});
 
     const rows = await db('UPDATE board SET title=?, body=? WHERE board_id=?', [title, body, board_id]);
     res.json({
-      success: true,
       msg: '글 수정 성공'
     });
   } catch(error){
     res.status(400).send({
-      success: false,
       msg: '글 수정 실패'
     })
   }
@@ -121,16 +97,14 @@ async function deleteBoard(req:Request, res: Response) {
     const check = await db('SELECT user_id FROM board WHERE board_id=? AND user_id=?',
      [board_id, req.session.userId]);
 
-    if(!check[0]) return res.json({success: false, msg: '사용자가 일치하지 않습니다.'});
+    if(!check[0]) return res.status(401).send({msg: '사용자가 일치하지 않습니다.'});
 
     const rows = await db('DELETE FROM board WHERE board_id=?', [board_id]);
     res.json({
-      success: true,
       msg: '글 삭제 성공'
     });
   } catch(error){
     res.status(400).send({
-      success: false,
       msg: '글 삭제 실패'
     })
   }
@@ -146,20 +120,17 @@ async function scrapBoard(req: Request, res: Response){
     if(check[0]){
       await db('DELETE FROM scrap WHERE scrap_id=?', [check[0].scrap_id]);
       res.json({
-        success: true,
-        msg: '스크랩 삭제 성공'
+        msg: '스크랩 취소 성공'
       })
     } else{
       await db('INSERT INTO scrap (board_id, user_id) VALUES (?, ?)', [boardId, userId]);
       res.json({
-        success: true,
         msg: '스크랩 성공'
       })
     }
     
   } catch(error){
     res.status(400).send({
-      success: false,
       msg : '스크랩 실패'
     })
   } 
@@ -173,10 +144,8 @@ async function readScrapBoard(req:Request, res: Response) {
      [userId]);
 
     res.json(rows);
-
   } catch(error){
     res.status(400).send({
-      success: false,
       msg: '스크랩 조회 실패'
     })
   }
@@ -196,7 +165,7 @@ async function scrapCount(req: Request, res: Response){
     }
   } catch(error){
     res.status(400).send({
-      success: false
+      msg: '스크랩 개수 조회 실패'
     })
   }
 }
@@ -214,7 +183,7 @@ async function goodCount(req: Request, res: Response){
           })
   } catch(error){
       res.status(400).send({
-          success: false
+          msg : '좋아요 개수 조회 실패'
       })
   }
 }
@@ -230,22 +199,17 @@ async function goodBoard(req: Request, res: Response){
       if(check[0]){
           await db('DELETE FROM boardgood WHERE good_id=?', [check[0].good_id]);
           res.json({
-              success: true,
               msg : '좋아요 취소 성공'
           })
       } else{
           await db('INSERT INTO boardgood (user_id, board_id) VALUES (?, ?)', [user_id, board_id]);
           res.json({
-              success: true,
               msg : '좋아요 성공'
           })
       }
-
-      
-
   } catch(error){
       res.status(400).send({
-          success: false,
+          msg : '좋아요 실패'
       })
   }
 }
@@ -259,7 +223,7 @@ async function myReplyBoard(req: Request, res: Response){
 
   } catch(error){
     res.status(400).send({
-      success: false
+      msg : '내가 단 댓글 게시판 조회 실패'
     })
   }
 }
@@ -268,8 +232,7 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
   if(req.session.isLogedIn){
     next();
   } else{
-    res.status(400).send({
-      success: false,
+    res.status(401).send({
       msg: '로그인이 필요합니다'
     })
   }
@@ -278,7 +241,7 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
 const router = Router();
 
 // 게시글 좋아요
-router.get('/good/:id', goodBoard);
+router.get('/good/:id', loginCheck, goodBoard);
 router.get('/goodcount/:id', goodCount);
 
 // 게시글 스크랩
