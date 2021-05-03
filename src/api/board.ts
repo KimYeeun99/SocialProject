@@ -33,8 +33,8 @@ async function insertBoard(req: Request, res: Response) {
 async function searchBoard(req: Request, res: Response){
   try{
     const title = req.query.title;
-    const rows = await db(`select * from board where like ? order by regdate desc`,
-     ['%'+title+'%']);
+    const rows = await db(`select * from board where title like ? or body like ? order by regdate desc`,
+     ['%'+title+'%', '%'+title+'%']);
     res.json({
       success: true,
       data: rows
@@ -106,7 +106,7 @@ async function deleteBoard(req:Request, res: Response) {
     const check = await db('SELECT user_id FROM board WHERE board_id=? AND user_id=?',
      [board_id, req.session.userId]);
 
-    if(!check[0]) return res.status(401).send({msg: '사용자가 일치하지 않습니다.'});
+    if(!check[0]) return res.status(401).send({success: false});
 
     const rows = await db('DELETE FROM board WHERE board_id=?', [board_id]);
     res.json({
