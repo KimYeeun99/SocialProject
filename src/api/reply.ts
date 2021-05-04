@@ -25,21 +25,12 @@ async function insertReply(req: Request, res: Response) {
             data.insertId,
         ]);
         res.json({
-<<<<<<< HEAD
             success :true
         })
     } catch(error){
         res.status(400).send({
             success: false
         })
-=======
-            msg: "댓글 작성 완료",
-        });
-    } catch (error) {
-        res.status(500).send({
-            msg: "댓글 작성 실패",
-        });
->>>>>>> upstream/master
     }
 }
 
@@ -56,7 +47,6 @@ async function insertSubReply(req: Request, res: Response) {
         );
 
         res.json({
-<<<<<<< HEAD
             success: true
         })
 
@@ -64,14 +54,6 @@ async function insertSubReply(req: Request, res: Response) {
         res.status(400).send({
         success: false
     })
-=======
-            msg: "댓글 작성 완료",
-        });
-    } catch (error) {
-        res.status(500).send({
-            msg: "댓글 작성 실패",
-        });
->>>>>>> upstream/master
     }
 }
 
@@ -98,7 +80,6 @@ async function readAllReply(req: Request, res: Response) {
                 if (cnt !== -1) tree[cnt].child.push(data[d]);
             }
         }
-<<<<<<< HEAD
         res.json({
             success: true,
             data: tree
@@ -107,13 +88,6 @@ async function readAllReply(req: Request, res: Response) {
         res.status(400).send({
             success: false
         })
-=======
-        res.json(tree);
-    } catch (error) {
-        res.status(500).send({
-            msg: "댓글 조회 실패",
-        });
->>>>>>> upstream/master
     }
 }
 
@@ -128,12 +102,7 @@ async function updateReply(req: Request, res: Response) {
             [reply_id, user_id]
         );
 
-<<<<<<< HEAD
         if(!check[0]) return res.status(401).send({success: false})
-=======
-        if (!check[0])
-            return res.status(401).send({ msg: "사용자가 일치하지 않습니다." });
->>>>>>> upstream/master
 
         const rows = await db("UPDATE reply SET body=? WHERE reply_id = ?", [
             body,
@@ -141,7 +110,6 @@ async function updateReply(req: Request, res: Response) {
         ]);
 
         res.json({
-<<<<<<< HEAD
             success: true
         });
     }
@@ -152,15 +120,6 @@ async function updateReply(req: Request, res: Response) {
     }
 
 
-=======
-            msg: "댓글 수정 성공",
-        });
-    } catch (error) {
-        res.status(500).send({
-            msg: "댓글 수정 실패",
-        });
-    }
->>>>>>> upstream/master
 }
 
 async function deleteReply(req: Request, res: Response) {
@@ -172,12 +131,7 @@ async function deleteReply(req: Request, res: Response) {
             [reply_id, user_id]
         );
 
-<<<<<<< HEAD
         if(!check[0]) return res.status(401).send({success: false});
-=======
-        if (!check[0])
-            return res.status(401).send({ msg: "사용자가 일치하지 않습니다." });
->>>>>>> upstream/master
 
         const rows = await db(
             "DELETE FROM reply WHERE reply_id=? OR parent_id=?",
@@ -185,7 +139,6 @@ async function deleteReply(req: Request, res: Response) {
         );
 
         res.json({
-<<<<<<< HEAD
             success: true
         })
     } catch(error){
@@ -215,43 +168,12 @@ async function replyCount(req: Request, res: Response){
       res.status(400).send({
         success: false
       })
-=======
-            msg: "댓글 삭제 성공",
-        });
-    } catch (error) {
-        res.status(500).send({
-            msg: "댓글 삭제 실패",
-        });
-    }
-}
-
-async function replyCount(req: Request, res: Response) {
-    try {
-        const boardId = req.params.boardid;
-        const rows = await db(
-            "select count(reply_id) as replycount from reply where board_id=?",
-            [boardId]
-        );
-
-        if (rows[0]) {
-            res.json(rows);
-        } else {
-            res.json({
-                replycount: 0,
-            });
-        }
-    } catch (error) {
-        res.status(500).send({
-            msg: "댓글 개수 조회 실패",
-        });
->>>>>>> upstream/master
     }
 }
 
 async function goodCount(req: Request, res: Response) {
     try {
         const replyId = req.params.replyid;
-<<<<<<< HEAD
         const rows = await db('select count(reply_id) as goodcount from replygood where reply_id=? group by reply_id', [replyId]);
         
         if(rows[0])
@@ -268,22 +190,6 @@ async function goodCount(req: Request, res: Response) {
         res.status(400).send({
             success: false
         })
-=======
-        const rows = await db(
-            "select count(reply_id) as count from replygood where reply_id=? group by reply_id",
-            [replyId]
-        );
-
-        if (rows[0]) res.json(rows);
-        else
-            res.send({
-                count: 0,
-            });
-    } catch (error) {
-        res.status(400).send({
-            msg: "좋아요 개수 조회 실패",
-        });
->>>>>>> upstream/master
     }
 }
 
@@ -302,7 +208,6 @@ async function goodReply(req: Request, res: Response) {
                 check[0].good_id,
             ]);
             res.json({
-<<<<<<< HEAD
                 success : true
             })
         } else{
@@ -325,33 +230,6 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
       res.status(401).send({
         success: false
       })
-=======
-                msg: "좋아요 취소 성공",
-            });
-        } else {
-            await db(
-                "INSERT INTO replygood (user_id, reply_id) VALUES (?, ?)",
-                [user_id, reply_id]
-            );
-            res.json({
-                msg: "좋아요 성공",
-            });
-        }
-    } catch (error) {
-        res.status(500).send({
-            msg: "좋아요 실패",
-        });
-    }
-}
-
-function loginCheck(req: Request, res: Response, next: NextFunction) {
-    if (req.session.isLogedIn) {
-        next();
-    } else {
-        res.status(401).send({
-            msg: "로그인이 필요합니다",
-        });
->>>>>>> upstream/master
     }
 }
 
