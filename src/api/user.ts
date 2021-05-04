@@ -6,12 +6,11 @@ import argon2 from "argon2";
 export const registerScheme = yup.object({
   id: yup.string().required(),
   password: yup.string().required(),
-  email: yup.string().required(),
   name: yup.string().required(),
   nickname: yup.string().required(),
   birth: yup.date().required(),
   phone: yup.string().required(),
-  schoolgrade: yup.number().required(),
+  schoolgrade: yup.number().oneOf([1, 2, 3]).required(),
   schoolclass: yup.number().required(),
 });
 
@@ -20,11 +19,10 @@ async function register(req: Request, res: Response) {
     const {
       id,
       password,
-      email,
       name,
+      phone,
       nickname,
       birth,
-      phone,
       schoolgrade,
       schoolclass,
     } = registerScheme.validateSync(req.body);
@@ -33,15 +31,14 @@ async function register(req: Request, res: Response) {
     const hashPassword = await argon2.hash(password);
     if (!search[0]) {
       const rows = await db(
-        "INSERT INTO user(id, password, email, name, nickname, birth, phone, schoolgrade, schoolclass) VALUES(?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO user(id, password, name, phone, nickname, birth, schoolgrade, schoolclass) VALUES(?,?,?,?,?,?,?,?,?)",
         [
           id,
           hashPassword,
-          email,
           name,
+          phone,
           nickname,
           birth,
-          phone,
           schoolgrade,
           schoolclass,
         ]
@@ -51,7 +48,7 @@ async function register(req: Request, res: Response) {
       res.status(400).send({ msg: "이미 존재하는 ID" });
     }
   } catch (error) {
-    res.status(400).send({ error: "에러" });
+    res.status(500).send({ error: "에러" });
   }
 }
 
@@ -93,7 +90,19 @@ async function userOut(req: Request, res: Response) {
     const rows = await db("DELETE FROM user WHERE id=?", [req.session.userId]);
     res.send({ msg: "탈퇴성공" });
   } catch (error) {
-    res.status(400).send({ error: "탈퇴하는데 실패했습니다." });
+    res.status(500).send({ error: "탈퇴하는데 실패했습니다." });
+  }
+}
+
+async function confirmDupName(req: Request, res: Response) {
+  try {
+    const search = await db("SELECT id FROM user WHERE id=?", [req.body.id]);
+    if (!search[0]) {
+      res.status(400).send({ success: false });
+    }
+    res.send({ success: true });
+  } catch (error) {
+    res.status(500).send({ error: "탈퇴하는데 실패했습니다." });
   }
 }
 
@@ -102,4 +111,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
 router.delete("/quit", userOut);
+router.get("/confirm/name", confirmDupName);
+
 export default router;
