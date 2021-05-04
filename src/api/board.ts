@@ -3,8 +3,8 @@ import * as yup from "yup";
 import { db } from "../db/db";
 
 export const boardScheme = yup.object({
-  title: yup.string().required(),
-  body: yup.string().required(),
+    title: yup.string().required(),
+    body: yup.string().required(),
 });
 
 async function insertBoard(req: Request, res: Response) {
@@ -145,12 +145,14 @@ async function scrapBoard(req: Request, res: Response){
   } 
 }
 
-async function readScrapBoard(req:Request, res: Response) {
-  try{
-    const userId = req.session.userId;
+async function readScrapBoard(req: Request, res: Response) {
+    try {
+        const userId = req.session.userId;
 
-    const rows = await db(`select board.* from scrap inner join board on board.board_id=scrap.board_id where scrap.user_id=? order by regdate desc`,
-     [userId]);
+        const rows = await db(
+            `select board.* from scrap inner join board on board.board_id=scrap.board_id where scrap.user_id=? order by regdate desc`,
+            [userId]
+        );
 
     res.json({
       success: true,
@@ -265,16 +267,16 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
 const router = Router();
 
 // 게시글 좋아요
-router.get('/good/:id', loginCheck, goodBoard);
-router.get('/goodcount/:id', goodCount);
+router.get("/good/:id", loginCheck, goodBoard);
+router.get("/goodcount/:id", goodCount);
 
 // 게시글 스크랩
-router.get('/scrap', loginCheck, readScrapBoard);
-router.get('/scrap/:id', loginCheck, scrapBoard);
-router.get('/scrapcount/:id', scrapCount);
+router.get("/scrap", loginCheck, readScrapBoard);
+router.get("/scrap/:id", loginCheck, scrapBoard);
+router.get("/scrapcount/:id", scrapCount);
 
 //내가 단 댓글 게시글 조회
-router.get('/myreply', loginCheck, myReplyBoard);
+router.get("/myreply", loginCheck, myReplyBoard);
 
 // 게시글 CRUD
 router.post('/', loginCheck, insertBoard);

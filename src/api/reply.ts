@@ -3,24 +3,27 @@ import * as yup from "yup";
 import { db } from "../db/db";
 
 export const replyScheme = yup.object({
-    body: yup.string().required()
+    body: yup.string().required(),
 });
 
-async function insertReply(req:Request, res: Response) {
-    try{
-        const {
-            body
-        } = replyScheme.validateSync(req.body);
+async function insertReply(req: Request, res: Response) {
+    try {
+        const { body } = replyScheme.validateSync(req.body);
 
         const board_id = req.params.boardid;
         const user_id = req.session.userId;
 
-        const rows = await db('INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)',
-         [body, user_id, board_id, 0, 0]);
+        const rows = await db(
+            "INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)",
+            [body, user_id, board_id, 0, 0]
+        );
 
         const data = JSON.parse(JSON.stringify(rows));
 
-        await db('UPDATE reply SET parent_id=? WHERE reply_id=?', [data.insertId, data.insertId]);
+        await db("UPDATE reply SET parent_id=? WHERE reply_id=?", [
+            data.insertId,
+            data.insertId,
+        ]);
         res.json({
             success :true
         })
@@ -31,18 +34,17 @@ async function insertReply(req:Request, res: Response) {
     }
 }
 
-async function insertSubReply(req:Request, res: Response) {
-    try{
+async function insertSubReply(req: Request, res: Response) {
+    try {
         const parent_id = req.params.replyid;
         const board_id = req.params.boardid;
         const user_id = req.session.userId;
-        const {
-            body
-        } = replyScheme.validateSync(req.body);
+        const { body } = replyScheme.validateSync(req.body);
 
-
-        const rows = await db('INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)',
-         [body, user_id, board_id, parent_id, 1]);
+        const rows = await db(
+            "INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)",
+            [body, user_id, board_id, parent_id, 1]
+        );
 
         res.json({
             success: true
@@ -55,25 +57,27 @@ async function insertSubReply(req:Request, res: Response) {
     }
 }
 
-async function readAllReply(req:Request, res: Response) {
-    try{
+async function readAllReply(req: Request, res: Response) {
+    try {
         const boardId = req.params.boardid;
-        const rows = await db(`SELECT * FROM reply where board_id=? order by parent_id, level, regdate`, [boardId]);
+        const rows = await db(
+            `SELECT * FROM reply where board_id=? order by parent_id, level, regdate`,
+            [boardId]
+        );
 
         var data = JSON.parse(JSON.stringify(rows));
 
         var tree = [];
         var cnt = -1;
-        for(var d=0; d<data.length; d++){
-            if(data[d].level === 0){
+        for (var d = 0; d < data.length; d++) {
+            if (data[d].level === 0) {
                 tree.push({
                     data: data[d],
-                    child: []
-                })
+                    child: [],
+                });
                 cnt++;
-            } else{
-                if(cnt !== -1)
-                tree[cnt].child.push(data[d]);
+            } else {
+                if (cnt !== -1) tree[cnt].child.push(data[d]);
             }
         }
         res.json({
@@ -87,19 +91,23 @@ async function readAllReply(req:Request, res: Response) {
     }
 }
 
-async function updateReply(req: Request, res: Response){
-    try{
+async function updateReply(req: Request, res: Response) {
+    try {
         const user_id = req.session.userId;
         const reply_id = req.params.replyid;
-        const {
-            body
-        } = replyScheme.validateSync(req.body);
+        const { body } = replyScheme.validateSync(req.body);
 
-        const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
+        const check = await db(
+            "SELECT reply_id FROM reply WHERE reply_id=? and user_id=?",
+            [reply_id, user_id]
+        );
 
         if(!check[0]) return res.status(401).send({success: false})
 
-        const rows = await db('UPDATE reply SET body=? WHERE reply_id = ?', [body, reply_id]);
+        const rows = await db("UPDATE reply SET body=? WHERE reply_id = ?", [
+            body,
+            reply_id,
+        ]);
 
         res.json({
             success: true
@@ -114,15 +122,21 @@ async function updateReply(req: Request, res: Response){
 
 }
 
-async function deleteReply(req: Request, res: Response){
-    try{
+async function deleteReply(req: Request, res: Response) {
+    try {
         const user_id = req.session.userId;
         const reply_id = req.params.replyid;
-        const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
+        const check = await db(
+            "SELECT reply_id FROM reply WHERE reply_id=? and user_id=?",
+            [reply_id, user_id]
+        );
 
         if(!check[0]) return res.status(401).send({success: false});
 
-        const rows = await db('DELETE FROM reply WHERE reply_id=? OR parent_id=?', [reply_id, reply_id]);
+        const rows = await db(
+            "DELETE FROM reply WHERE reply_id=? OR parent_id=?",
+            [reply_id, reply_id]
+        );
 
         res.json({
             success: true
@@ -155,11 +169,10 @@ async function replyCount(req: Request, res: Response){
         success: false
       })
     }
-    
-  }
+}
 
-async function goodCount(req: Request, res: Response){
-    try{
+async function goodCount(req: Request, res: Response) {
+    try {
         const replyId = req.params.replyid;
         const rows = await db('select count(reply_id) as goodcount from replygood where reply_id=? group by reply_id', [replyId]);
         
@@ -180,16 +193,20 @@ async function goodCount(req: Request, res: Response){
     }
 }
 
-async function goodReply(req: Request, res: Response){
-    try{
+async function goodReply(req: Request, res: Response) {
+    try {
         const user_id = req.session.userId;
         const reply_id = req.params.replyid;
 
-        const check = await db('SELECT good_id FROM ReplyGood WHERE reply_id=? and user_id=?',
-        [reply_id, user_id]);
-        
-        if(check[0]){
-            await db('DELETE FROM replygood WHERE good_id=?', [check[0].good_id]);
+        const check = await db(
+            "SELECT good_id FROM ReplyGood WHERE reply_id=? and user_id=?",
+            [reply_id, user_id]
+        );
+
+        if (check[0]) {
+            await db("DELETE FROM replygood WHERE good_id=?", [
+                check[0].good_id,
+            ]);
             res.json({
                 success : true
             })
@@ -214,25 +231,22 @@ function loginCheck(req: Request, res: Response, next: NextFunction){
         success: false
       })
     }
-  }
-
+}
 
 const router = Router();
 
 //댓글 좋아요
-router.get('/goodcount/:replyid', goodCount);
-router.get('/good/:replyid', loginCheck, goodReply);
+router.get("/goodcount/:replyid", goodCount);
+router.get("/good/:replyid", loginCheck, goodReply);
 
 //댓글 갯수
-router.get('/replycount/:boardid', replyCount);
+router.get("/replycount/:boardid", replyCount);
 
 // 댓글 CRUD
-router.post('/:boardid', loginCheck, insertReply);
-router.post('/:boardid/:replyid', loginCheck, insertSubReply);
-router.get('/:boardid', readAllReply);
-router.put('/:boardid/:replyid', loginCheck, updateReply);
-router.delete('/:boardid/:replyid', loginCheck, deleteReply);
+router.post("/:boardid", loginCheck, insertReply);
+router.post("/:boardid/:replyid", loginCheck, insertSubReply);
+router.get("/:boardid", readAllReply);
+router.put("/:boardid/:replyid", loginCheck, updateReply);
+router.delete("/:boardid/:replyid", loginCheck, deleteReply);
 
-export default router
-
-
+export default router;
