@@ -39,9 +39,18 @@ async function searchBoard(req: Request, res: Response) {
       `select * from board where title like ? or body like ? order by regdate desc`,
       ["%" + title + "%", "%" + title + "%"]
     );
+
+    const data = JSON.parse(JSON.stringify(rows));
+    const list = [];
+
+    data.forEach((value) => {
+      value.regdate = formatDate(value.regdate);
+      list.push(value);
+    });
+
     res.json({
       success: true,
-      data: rows,
+      data: list,
     });
   } catch (error) {
     res.status(500).send({
@@ -76,9 +85,17 @@ async function readOneBoard(req: Request, res: Response) {
   try {
     const board_id = req.params.id;
     const rows = await db(`select * from board WHERE board_id=?`, [board_id]);
+    const data = JSON.parse(JSON.stringify(rows));
+    const list = [];
+
+    data.forEach((value) => {
+      value.regdate = formatDate(value.regdate);
+      list.push(value);
+    });
+
     res.json({
       success: true,
-      data: rows,
+      data: list,
     });
   } catch (error) {
     res.status(500).send({
