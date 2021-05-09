@@ -48,7 +48,6 @@ async function register(req: Request, res: Response) {
       res.status(400).send({ msg: "이미 존재하는 ID" });
     }
   } catch (error) {
-    console.log(error);
     res.status(500).send({ error: "에러" });
   }
 }
@@ -67,11 +66,6 @@ async function login(req: Request, res: Response) {
       req.session.userId = id;
       req.session.password = password;
       req.session.isLogedIn = true;
-      console.log({
-        id: req.session.userId,
-        password: req.session.password,
-        logined: req.session.isLogedIn,
-      });
       res.send("로그인 성공");
     } else {
       res.status(400).send("잘못된 Password입니다.");

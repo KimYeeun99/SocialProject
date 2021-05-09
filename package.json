@@ -16,6 +16,7 @@
         "express-session": "^1.17.1",
         "express-winston": "^4.0.5",
         "http-errors": "^1.8.0",
+        "moment": "^2.29.1",
         "mongodb": "^3.6.3",
         "mongoose": "^5.11.9",
         "mysql": "^2.18.1",
