@@ -1,6 +1,7 @@
 import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
+import tokens from "./token";
 
 export const replyScheme = yup.object({
     body: yup.string().required()
@@ -13,7 +14,7 @@ async function insertReply(req:Request, res: Response) {
         } = replyScheme.validateSync(req.body);
 
         const board_id = req.params.boardid;
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
 
         const rows = await db('INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)',
          [body, user_id, board_id, 0, 0]);
@@ -35,7 +36,7 @@ async function insertSubReply(req:Request, res: Response) {
     try{
         const parent_id = req.params.replyid;
         const board_id = req.params.boardid;
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
         const {
             body
         } = replyScheme.validateSync(req.body);
@@ -88,7 +89,7 @@ async function readAllReply(req:Request, res: Response) {
 
 async function updateReply(req: Request, res: Response){
     try{
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
         const reply_id = req.params.replyid;
         const {
             body
@@ -113,7 +114,7 @@ async function updateReply(req: Request, res: Response){
 
 async function deleteReply(req: Request, res: Response){
     try{
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
         const reply_id = req.params.replyid;
         const check = await db('SELECT reply_id FROM reply WHERE reply_id=? and user_id=?', [reply_id, user_id]);
 
@@ -182,7 +183,7 @@ async function goodCount(req: Request, res: Response){
 
 async function goodReply(req: Request, res: Response){
     try{
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
         const reply_id = req.params.replyid;
 
         const check = await db('SELECT good_id FROM ReplyGood WHERE reply_id=? and user_id=?',
@@ -211,31 +212,21 @@ async function goodReply(req: Request, res: Response){
     }
 }
 
-function loginCheck(req: Request, res: Response, next: NextFunction) {
-    if (req.session.isLogedIn) {
-        next();
-    } else {
-        res.status(401).send({
-            success: false
-        });
-    }
-  }
-
 
 const router = Router();
 
 //댓글 좋아요
 router.get('/goodcount/:replyid', goodCount);
-router.get('/good/:replyid', loginCheck, goodReply);
+router.get('/good/:replyid', tokens.validTokenCheck, goodReply);
 
 //댓글 갯수
 router.get('/replycount/:boardid', replyCount);
 
 // 댓글 CRUD
-router.post('/:boardid', loginCheck, insertReply);
-router.post('/:boardid/:replyid', loginCheck, insertSubReply);
+router.post('/:boardid', tokens.validTokenCheck, insertReply);
+router.post('/:boardid/:replyid', tokens.validTokenCheck, insertSubReply);
 router.get('/:boardid', readAllReply);
-router.put('/:boardid/:replyid', loginCheck, updateReply);
-router.delete('/:boardid/:replyid', loginCheck, deleteReply);
+router.put('/:boardid/:replyid', tokens.validTokenCheck, updateReply);
+router.delete('/:boardid/:replyid', tokens.validTokenCheck, deleteReply);
 
 export default router

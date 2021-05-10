@@ -1,6 +1,7 @@
 import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
+import tokens from "./token";
 
 export const boardScheme = yup.object({
   title: yup.string().required(),
@@ -11,7 +12,7 @@ async function insertBoard(req: Request, res: Response) {
     try {
         const { title, body } = boardScheme.validateSync(req.body);
 
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
 
         const rows = await db(
             "INSERT INTO board (title, body, user_id) values (?, ?, ?)",
@@ -80,7 +81,7 @@ async function updateBoard(req: Request, res: Response) {
         const { title, body } = boardScheme.validateSync(req.body);
         const check = await db(
             "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
-            [board_id, req.session.userId]
+            [board_id, req.body.userId]
         );
 
         if (!check[0])
@@ -105,7 +106,7 @@ async function deleteBoard(req: Request, res: Response) {
         const board_id = req.params.id;
         const check = await db(
             "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
-            [board_id, req.session.userId]
+            [board_id, req.body.userId]
         );
 
         if (!check[0])
@@ -125,7 +126,7 @@ async function deleteBoard(req: Request, res: Response) {
 async function scrapBoard(req: Request, res: Response) {
     try {
         const boardId = req.params.id;
-        const userId = req.session.userId;
+        const userId = req.body.userId;
 
         const check = await db(
             "SELECT scrap_id FROM scrap WHERE board_id=? AND user_id=?",
@@ -158,7 +159,7 @@ async function scrapBoard(req: Request, res: Response) {
 
 async function readScrapBoard(req: Request, res: Response) {
     try {
-        const userId = req.session.userId;
+        const userId = req.body.userId;
 
         const rows = await db(
             `select board.* from scrap inner join board on board.board_id=scrap.board_id where scrap.user_id=? order by regdate desc`,
@@ -227,7 +228,7 @@ async function goodCount(req: Request, res: Response) {
 
 async function goodBoard(req: Request, res: Response) {
     try {
-        const user_id = req.session.userId;
+        const user_id = req.body.userId;
         const board_id = req.params.id;
 
         const check = await db(
@@ -262,7 +263,7 @@ async function goodBoard(req: Request, res: Response) {
 
 async function myReplyBoard(req: Request, res: Response) {
     try {
-        const userId = req.session.userId;
+        const userId = req.body.userId;
         const rows = await db(
             `select board.* from (select distinct board_id from reply where user_id=?) as R 
     inner join board on R.board_id=board.board_id order by regdate desc`,
@@ -279,37 +280,28 @@ async function myReplyBoard(req: Request, res: Response) {
     }
 }
 
-function loginCheck(req: Request, res: Response, next: NextFunction) {
-    if (req.session.isLogedIn) {
-        next();
-    } else {
-        res.status(401).send({
-            success: false
-        });
-    }
-}
 
 const router = Router();
 
 // 게시글 좋아요
-router.get('/good/:id', loginCheck, goodBoard);
+router.get('/good/:id', tokens.validTokenCheck, goodBoard);
 router.get('/goodcount/:id', goodCount);
 
 // 게시글 스크랩
-router.get('/scrap', loginCheck, readScrapBoard);
-router.get('/scrap/:id', loginCheck, scrapBoard);
+router.get('/scrap', tokens.validTokenCheck, readScrapBoard);
+router.get('/scrap/:id', tokens.validTokenCheck, scrapBoard);
 router.get('/scrapcount/:id', scrapCount);
 
 //내가 단 댓글 게시글 조회
-router.get('/myreply', loginCheck, myReplyBoard);
+router.get('/myreply', tokens.validTokenCheck, myReplyBoard);
 
 // 게시글 CRUD
-router.post('/', loginCheck, insertBoard);
+router.post('/', tokens.validTokenCheck, insertBoard);
 router.get('/search', searchBoard);
 router.get('/', readAllBoard);
 router.get('/:id', readOneBoard);
-router.put('/:id', loginCheck, updateBoard);
-router.delete('/:id', loginCheck, deleteBoard);
+router.put('/:id', tokens.validTokenCheck, updateBoard);
+router.delete('/:id', tokens.validTokenCheck, deleteBoard);
 
 
 export default router;
