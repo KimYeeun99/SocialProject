@@ -1,5 +1,7 @@
 import { Router, Response, Request } from "express";
 import Neis from "@my-school.info/neis-api";
+import { IMealInfoRow } from "@my-school.info/neis-api/dist/interpaces/response";
+import { string } from "yup/lib/locale";
 
 const neis = new Neis({
   KEY: process.env.NEIS_KEY,
@@ -14,15 +16,28 @@ async function test(req: Request, res: Response) {
   const mealInfo = await neis.getMealInfo({
     ATPT_OFCDC_SC_CODE: school[0].ATPT_OFCDC_SC_CODE,
     SD_SCHUL_CODE: school[0].SD_SCHUL_CODE,
-    MLSV_YMD: req.body.day,
+    MLSV_YMD: req.query.day as string,
   });
 
-  mealInfo.forEach((value) => {});
-
-  res.send(mealInfo);
+  if (mealInfo) {
+    const day_meal = {
+      MLSV_YMD: mealInfo[0].MLSV_YMD,
+      DDISH_NM: mealInfo[0].DDISH_NM,
+      ORPLC_INFO: mealInfo[0].ORPLC_INFO,
+      CAL_INFO: mealInfo[0].CAL_INFO,
+    };
+    res.send({ day_meal, success: true });
+  } else {
+    res.status(500).send({ success: false });
+  }
 }
 
 const router = Router();
 router.post("/", test);
 
 export default router;
+
+/*
+MLSV_YMD랑 DDISH_NM
+ORPLC_INFO랑 CAL_INFO
+*/
