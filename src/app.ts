@@ -23,7 +23,7 @@ app.get("/", async (req, res) => {
 app.use("/api/user", user);
 app.use("/api/board", board);
 app.use("/api/reply", reply);
-app.use("/api/", cafeteria);
+app.use("/api/cafeteria", cafeteria);
 
 app.get("/api/token/refresh", token.refreshRegen);
 
