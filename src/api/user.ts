@@ -1,6 +1,7 @@
 import { Router, Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
+import tokens from "./token";
 import argon2 from "argon2";
 
 export const registerScheme = yup.object({
@@ -66,7 +67,14 @@ async function login(req: Request, res: Response) {
       req.session.userId = id;
       req.session.password = password;
       req.session.isLogedIn = true;
-      res.send("로그인 성공");
+      console.log({
+        id: req.session.userId,
+        password: req.session.password,
+        logined: req.session.isLogedIn,
+      });
+
+      const token = await tokens.createTokens(id);
+      res.send({token: token, msg:"로그인 성공"});
     } else {
       res.status(400).send("잘못된 Password입니다.");
     }
@@ -74,6 +82,7 @@ async function login(req: Request, res: Response) {
 }
 
 async function logout(req: Request, res: Response) {
+  tokens.deleteTokens(req, res);
   req.session.destroy((err) => {
     if (err) throw err;
   });
