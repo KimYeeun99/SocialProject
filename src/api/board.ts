@@ -193,9 +193,17 @@ async function readScrapBoard(req: Request, res: Response) {
       [userId]
     );
 
+    const data = JSON.parse(JSON.stringify(rows));
+    const list = [];
+
+    data.forEach((value) => {
+      value.regdate = formatDate(value.regdate);
+      list.push(value);
+    });
+
     res.json({
       success: true,
-      data: rows,
+      data: list,
     });
   } catch (error) {
     res.status(500).send({
@@ -291,9 +299,18 @@ async function myReplyBoard(req: Request, res: Response) {
     inner join board on R.board_id=board.board_id order by regdate desc`,
       [userId]
     );
+
+    const data = JSON.parse(JSON.stringify(rows));
+    const list = [];
+
+    data.forEach((value) => {
+      value.regdate = formatDate(value.regdate);
+      list.push(value);
+    });
+
     res.json({
       success: true,
-      data: rows,
+      data: list,
     });
   } catch (error) {
     res.status(500).send({

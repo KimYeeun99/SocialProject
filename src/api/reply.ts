@@ -1,10 +1,15 @@
 import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
+import moment from "moment";
 
 export const replyScheme = yup.object({
   body: yup.string().required(),
 });
+
+function formatDate(date) {
+  return moment(date).format("YYYY-MM-DD HH:mm:ss");
+}
 
 async function insertReply(req: Request, res: Response) {
   try {
@@ -64,7 +69,13 @@ async function readAllReply(req: Request, res: Response) {
       [boardId]
     );
 
-    var data = JSON.parse(JSON.stringify(rows));
+    var list = JSON.parse(JSON.stringify(rows));
+    const data = [];
+
+    list.forEach((value) => {
+      value.regdate = formatDate(value.regdate);
+      data.push(value);
+    });
 
     var tree = [];
     var cnt = -1;
