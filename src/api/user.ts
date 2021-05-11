@@ -1,6 +1,7 @@
 import { Router, Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
+import tokens from "./token";
 import argon2 from "argon2";
 
 export const registerScheme = yup.object({
@@ -43,12 +44,12 @@ async function register(req: Request, res: Response) {
           schoolclass,
         ]
       );
-      res.send({ msg: "회원가입 성공" });
+      res.send({ success: true });
     } else {
-      res.status(400).send({ msg: "이미 존재하는 ID" });
+      res.status(400).send({ success: false });
     }
   } catch (error) {
-    res.status(500).send({ error: "에러" });
+    res.status(500).send({success: false});
   }
 }
 
@@ -61,31 +62,45 @@ async function login(req: Request, res: Response) {
   try {
     const { id, password } = loginScheme.validateSync(req.body);
     const rows = await db("SELECT * FROM user WHERE id=?", [id]);
-    if (!rows[0]) res.status(400).send("잘못된 ID입니다.");
+    if (!rows[0]) res.status(400).send({success: false});
     else if (await argon2.verify(rows[0].password, password)) {
       req.session.userId = id;
       req.session.password = password;
       req.session.isLogedIn = true;
-      res.send("로그인 성공");
+
+      console.log({
+        id: req.session.userId,
+        password: req.session.password,
+        logined: req.session.isLogedIn,
+      });
+
+      const token = await tokens.createTokens(id);
+      res.send({
+        success: true,
+        token: token
+        });
     } else {
-      res.status(400).send("잘못된 Password입니다.");
+      res.status(400).send({success: false});
     }
-  } catch (error) {}
+  } catch (error) {
+      res.status(500).send({success: false})
+  }
 }
 
 async function logout(req: Request, res: Response) {
+  tokens.deleteTokens(req, res);
   req.session.destroy((err) => {
     if (err) throw err;
   });
-  res.send({ msg: "로그아웃 했습니다." });
+  res.send({success: true});
 }
 
 async function userOut(req: Request, res: Response) {
   try {
     const rows = await db("DELETE FROM user WHERE id=?", [req.session.userId]);
-    res.send({ msg: "탈퇴성공" });
+    res.send({ success: true });
   } catch (error) {
-    res.status(500).send({ error: "탈퇴하는데 실패했습니다." });
+    res.status(500).send({ success: false });
   }
 }
 
@@ -97,7 +112,7 @@ async function confirmDupName(req: Request, res: Response) {
     }
     res.send({ success: true });
   } catch (error) {
-    res.status(500).send({ error: "탈퇴하는데 실패했습니다." });
+    res.status(500).send({success: false});
   }
 }
 
@@ -111,7 +126,7 @@ async function confirmDupNickname(req: Request, res: Response) {
     }
     res.send({ success: true });
   } catch (error) {
-    res.status(500).send({ error: "탈퇴하는데 실패했습니다." });
+    res.status(500).send({ success: false });
   }
 }
 
