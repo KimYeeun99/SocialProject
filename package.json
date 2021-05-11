@@ -5,6 +5,7 @@
         "build": "tsc -p ."
     },
     "dependencies": {
+        "@my-school.info/neis-api": "^1.0.0",
         "@types/express-session": "^1.17.3",
         "argon2": "^0.27.2",
         "connect-history-api-fallback": "^1.6.0",

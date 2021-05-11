@@ -4,6 +4,7 @@ import { db } from "./db/db";
 import user from "./api/user";
 import board from "./api/board";
 import reply from "./api/reply";
+import cafeteria from "./api/cafeteria";
 import "dotenv/config";
 
 const app = express();
@@ -38,6 +39,7 @@ app.get("/", async (req, res) => {
 app.use("/api/user", user);
 app.use("/api/board", board);
 app.use("/api/reply", reply);
+app.use("/api/", cafeteria);
 
 app.listen(app.get("port"), () => {
   console.log("start");

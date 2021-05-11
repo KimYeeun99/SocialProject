@@ -2,6 +2,7 @@ import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
 import moment from "moment";
+import { Board } from "../model/board";
 
 export const boardScheme = yup.object({
   title: yup.string().required(),
@@ -61,9 +62,12 @@ async function searchBoard(req: Request, res: Response) {
 
 async function readAllBoard(req: Request, res: Response) {
   try {
-    const rows = await db(`select * from board order by regdate desc`, []);
-    const data = JSON.parse(JSON.stringify(rows));
-    const list = [];
+    const rows = await db(
+      "select *, (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount from board order by regdate desc",
+      []
+    );
+    const data: Array<Board> = JSON.parse(JSON.stringify(rows));
+    const list: Array<Board> = [];
 
     data.forEach((value) => {
       value.regdate = formatDate(value.regdate);
@@ -85,19 +89,27 @@ async function readOneBoard(req: Request, res: Response) {
   try {
     const board_id = req.params.id;
     const rows = await db(`select * from board WHERE board_id=?`, [board_id]);
-    const data = JSON.parse(JSON.stringify(rows));
-    const list = [];
+    const good_row = await db(
+      "select count(board_id) as goodcount from boardgood where board_id=? group by board_id",
+      [board_id]
+    );
 
-    data.forEach((value) => {
-      value.regdate = formatDate(value.regdate);
-      list.push(value);
-    });
+    if (!rows) {
+      res.status(400).send({ success: false });
+    }
+
+    if (!good_row[0]) rows[0].goodCount = 0;
+    else rows[0].goodCount = good_row[0].goodcount;
+
+    const read: Board = rows[0];
+    read.regdate = formatDate(read.regdate);
 
     res.json({
       success: true,
-      data: list,
+      data: read,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).send({
       success: false,
     });
