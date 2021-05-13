@@ -3,6 +3,22 @@ import * as yup from "yup";
 import { db } from "../db/db";
 import tokens from "./token";
 import argon2 from "argon2";
+import multer from "multer";
+import fs from "fs";
+
+const STORAGE_PATH = "public/img/";
+
+var storage = multer.diskStorage({
+  destination : function(req, file, cb) {
+    cb(null, STORAGE_PATH);
+  },
+  filename : function(req, file, cb) {
+    req.body.filename = file.fieldname + '-' + Date.now() + '.jpg';
+    cb(null, req.body.filename);
+  }
+})
+
+var upload = multer({storage : storage});
 
 export const registerScheme = yup.object({
   id: yup.string().required(),
@@ -121,6 +137,66 @@ async function confirmDupNickname(req: Request, res: Response) {
   }
 }
 
+async function imageUpload(req: Request, res: Response){
+  try{
+    var userId = req.body.userId;
+    var filename = req.body.filename;
+    const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
+
+    if(rows[0]){
+      fs.unlink(STORAGE_PATH + rows[0].path, async function(err){
+        await db('UPDATE imagepath SET path=? WHERE id=?', [filename, userId]);
+      });
+    } else{
+      await db('INSERT INTO imagepath VALUES (?, ?)', [userId, filename]);
+    }
+
+    res.send({success: true, filename : req.body.filename});
+  } catch(error){
+    fs.unlink(STORAGE_PATH + req.body.filename, function(err){
+      res.status(500).send({success: false});
+    });
+    
+  }
+}
+
+async function showImage(req: Request, res: Response){
+  try{
+    const rows = await db('SELECT path FROM imagepath WHERE id=?', [req.body.userId]);
+    
+    var filepath = '';
+
+    if(rows[0]){
+      filepath = rows[0].path;
+      res.redirect('/img/' + filepath);
+    } else{
+      res.status(204).json({success: true});
+    }
+  } catch(error){
+    res.status(500).send({success: false});
+  }
+}
+
+async function deleteImage(req: Request, res: Response){
+  try{
+    const userId = req.body.userId;
+
+    const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
+
+    if(rows[0]){
+      fs.unlink(STORAGE_PATH + rows[0].path, async function(err){   
+        await db('DELETE FROM imagepath WHERE id=?', [userId]);    
+        return res.json({success: true});
+      })
+    } else{
+      res.status(400).send({success: false});
+    }
+    
+  } catch(error){
+    res.status(500).send({success: false});
+  }
+}
+
 const router = Router();
 router.post("/register", register);
 router.post("/login", login);
@@ -128,5 +204,9 @@ router.post("/logout", logout);
 router.delete("/quit", userOut);
 router.post("/confirm/name", confirmDupName);
 router.post("/confirm/nickname", confirmDupNickname);
+
+router.post("/profile", upload.single('profile'), tokens.validTokenCheck, imageUpload);
+router.get("/profile", tokens.validTokenCheck, showImage);
+router.delete("/profile", tokens.validTokenCheck, deleteImage);
 
 export default router;
