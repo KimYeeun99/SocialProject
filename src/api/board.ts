@@ -38,7 +38,11 @@ async function searchBoard(req: Request, res: Response) {
   try {
     const title = req.query.title;
     const rows = await db(
-      `select * from board where title like ? or body like ? order by regdate desc`,
+      `select *,
+      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      from board where title like ? or body like ? order by regdate desc`,
       ["%" + title + "%", "%" + title + "%"]
     );
 
@@ -64,7 +68,11 @@ async function searchBoard(req: Request, res: Response) {
 async function readAllBoard(req: Request, res: Response) {
   try {
     const rows = await db(
-      "select *, (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount from board order by regdate desc",
+      `select *,
+      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      from board order by regdate desc`,
       []
     );
     const data: Array<Board> = JSON.parse(JSON.stringify(rows));
@@ -74,7 +82,6 @@ async function readAllBoard(req: Request, res: Response) {
       value.regdate = formatDate(value.regdate);
       list.push(value);
     });
-
     res.json({
       success: true,
       data: list,
@@ -89,18 +96,18 @@ async function readAllBoard(req: Request, res: Response) {
 async function readOneBoard(req: Request, res: Response) {
   try {
     const board_id = req.params.id;
-    const rows = await db(`select * from board WHERE board_id=?`, [board_id]);
-    const good_row = await db(
-      "select count(board_id) as goodcount from boardgood where board_id=? group by board_id",
+    const rows = await db(
+      `select *,
+      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      from board where board_id = ?`,
       [board_id]
     );
 
     if (!rows) {
       res.status(400).send({ success: false });
     }
-
-    if (!good_row[0]) rows[0].goodCount = 0;
-    else rows[0].goodCount = good_row[0].goodcount;
 
     const read: Board = rows[0];
     read.regdate = formatDate(read.regdate);
@@ -202,7 +209,11 @@ async function readScrapBoard(req: Request, res: Response) {
     const userId = req.body.userId;
 
     const rows = await db(
-      `select board.* from scrap inner join board on board.board_id=scrap.board_id where scrap.user_id=? order by regdate desc`,
+      `select board.*, 
+      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      from scrap inner join board on board.board_id=scrap.board_id where scrap.user_id=? order by regdate desc`,
       [userId]
     );
 
@@ -308,8 +319,12 @@ async function myReplyBoard(req: Request, res: Response) {
   try {
     const userId = req.body.userId;
     const rows = await db(
-      `select board.* from (select distinct board_id from reply where user_id=?) as R 
-    inner join board on R.board_id=board.board_id order by regdate desc`,
+      `select board.*,
+      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      from (select distinct board_id from reply where user_id=?) as MR inner join board on MR.board_id=board.board_id 
+      order by regdate desc`,
       [userId]
     );
 
