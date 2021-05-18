@@ -17,7 +17,7 @@ async function insertReply(req: Request, res: Response) {
     const { body } = replyScheme.validateSync(req.body);
 
     const board_id = req.params.boardid;
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
 
     const rows = await db(
       "INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)",
@@ -44,7 +44,7 @@ async function insertSubReply(req: Request, res: Response) {
   try {
     const parent_id = req.params.replyid;
     const board_id = req.params.boardid;
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
     const { body } = replyScheme.validateSync(req.body);
 
     const rows = await db(
@@ -104,7 +104,7 @@ async function readAllReply(req: Request, res: Response) {
 
 async function updateReply(req: Request, res: Response) {
   try {
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
     const reply_id = req.params.replyid;
     const { body } = replyScheme.validateSync(req.body);
 
@@ -132,7 +132,7 @@ async function updateReply(req: Request, res: Response) {
 
 async function deleteReply(req: Request, res: Response) {
   try {
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
     const reply_id = req.params.replyid;
     const check = await db(
       "SELECT reply_id FROM reply WHERE reply_id=? and user_id=?",
@@ -204,7 +204,7 @@ async function goodCount(req: Request, res: Response) {
 
 async function goodReply(req: Request, res: Response) {
   try {
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
     const reply_id = req.params.replyid;
 
     const check = await db(
