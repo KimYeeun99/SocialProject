@@ -20,6 +20,7 @@ app.get("/", async (req, res) => {
   res.send(rows);
 });
 
+app.use(express.static('public'));
 app.use("/api/user", user);
 app.use("/api/board", board);
 app.use("/api/reply", reply);
