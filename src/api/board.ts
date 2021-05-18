@@ -18,7 +18,7 @@ async function insertBoard(req: Request, res: Response) {
   try {
     const { title, body } = boardScheme.validateSync(req.body);
 
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
 
     const rows = await db(
       "INSERT INTO board (title, body, user_id) values (?, ?, ?)",
@@ -130,7 +130,7 @@ async function updateBoard(req: Request, res: Response) {
     const { title, body } = boardScheme.validateSync(req.body);
     const check = await db(
       "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
-      [board_id, req.body.userId]
+      [board_id, req.body.data.id]
     );
 
     if (!check[0]) return res.status(401).send({ success: false });
@@ -155,7 +155,7 @@ async function deleteBoard(req: Request, res: Response) {
     const board_id = req.params.id;
     const check = await db(
       "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
-      [board_id, req.body.userId]
+      [board_id, req.body.data.id]
     );
 
     if (!check[0]) return res.status(401).send({ success: false });
@@ -174,7 +174,7 @@ async function deleteBoard(req: Request, res: Response) {
 async function scrapBoard(req: Request, res: Response) {
   try {
     const boardId = req.params.id;
-    const userId = req.body.userId;
+    const userId = req.body.data.id;
 
     const check = await db(
       "SELECT scrap_id FROM scrap WHERE board_id=? AND user_id=?",
@@ -206,7 +206,7 @@ async function scrapBoard(req: Request, res: Response) {
 
 async function readScrapBoard(req: Request, res: Response) {
   try {
-    const userId = req.body.userId;
+    const userId = req.body.data.id;
 
     const rows = await db(
       `select board.*, 
@@ -284,7 +284,7 @@ async function goodCount(req: Request, res: Response) {
 
 async function goodBoard(req: Request, res: Response) {
   try {
-    const user_id = req.body.userId;
+    const user_id = req.body.data.id;
     const board_id = req.params.id;
 
     const check = await db(
@@ -317,7 +317,7 @@ async function goodBoard(req: Request, res: Response) {
 
 async function myReplyBoard(req: Request, res: Response) {
   try {
-    const userId = req.body.userId;
+    const userId = req.body.data.id;
     const rows = await db(
       `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 

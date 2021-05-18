@@ -80,7 +80,14 @@ async function login(req: Request, res: Response) {
     const rows = await db("SELECT * FROM user WHERE id=?", [id]);
     if (!rows[0]) res.status(400).send({ success: false });
     else if (await argon2.verify(rows[0].password, password)) {
-      const token = await tokens.createTokens(id);
+      const data = {
+        id: rows[0].id,
+        schoolgrade : rows[0].schoolgrade,
+        schoolclass : rows[0].schoolclass
+      }
+
+      const token = await tokens.createTokens(data);
+      
       res.send({
         success: true,
         token: token,
@@ -103,7 +110,7 @@ async function logout(req: Request, res: Response) {
 
 async function userOut(req: Request, res: Response) {
   try {
-    const rows = await db("DELETE FROM user WHERE id=?", [req.body.id]);
+    const rows = await db("DELETE FROM user WHERE id=?", [req.body.data.id]);
     res.send({ success: true });
   } catch (error) {
     res.status(500).send({ success: false });
@@ -139,7 +146,7 @@ async function confirmDupNickname(req: Request, res: Response) {
 
 async function imageUpload(req: Request, res: Response){
   try{
-    var userId = req.body.userId;
+    var userId = req.body.data.id;
     var filename = req.body.filename;
     const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
 
@@ -162,7 +169,7 @@ async function imageUpload(req: Request, res: Response){
 
 async function showImage(req: Request, res: Response){
   try{
-    const rows = await db('SELECT path FROM imagepath WHERE id=?', [req.body.userId]);
+    const rows = await db('SELECT path FROM imagepath WHERE id=?', [req.body.data.id]);
     
     var filepath = '';
 
@@ -179,7 +186,7 @@ async function showImage(req: Request, res: Response){
 
 async function deleteImage(req: Request, res: Response){
   try{
-    const userId = req.body.userId;
+    const userId = req.body.data.id;
 
     const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
 
@@ -200,8 +207,8 @@ async function deleteImage(req: Request, res: Response){
 const router = Router();
 router.post("/register", register);
 router.post("/login", login);
-router.post("/logout", logout);
-router.delete("/quit", userOut);
+router.post("/logout", tokens.validTokenCheck, logout);
+router.delete("/quit", tokens.validTokenCheck, userOut);
 router.post("/confirm/name", confirmDupName);
 router.post("/confirm/nickname", confirmDupNickname);
 

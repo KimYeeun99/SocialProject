@@ -7,13 +7,13 @@ const accessExpireTime = 60 * 60 * 2;  // 2 hours (Access 토큰 만료기한)
 const refreshExpireTime = 60 * 60 * 24 * 14;  // 2 Weeks (Refresh 토큰 만료기한)
 const refreshRegenTime = 60 * 60 * 24 * 7; // 기한이 1 Weeks 이하로 남은경우 (Refresh 토큰 갱신 조건)
 
-async function createTokens(id){
-    var access = await createAcToken(id);
+async function createTokens(data){
+    var access = await createAcToken(data);
 
-    if(await getRefToken(id)){
-        await deleteRefToken(id);
+    if(await getRefToken(data.id)){
+        await deleteRefToken(data.id);
     }
-    var refresh = await createRefToken(id);
+    var refresh = await createRefToken(data.id);
 
     return {
         access_token : access,
@@ -38,7 +38,7 @@ async function validTokenCheck(req: Request, res: Response, next: NextFunction){
         if(err){
             return res.status(401).send({success: false});
         }
-        req.body.userId = decode.id;
+        req.body.data = decode.data;
         next();
     })
 }
@@ -59,10 +59,10 @@ async function refreshRegen(req: Request, res: Response){
             }
 
             if(refreshTimeCheck(decode.iat)){
-                var data = await createTokens(id);
+                var data = await createTokens(decode.data);
                 return res.json(data);
             } else {
-                var data = await createAcToken(id);
+                var data = await createAcToken(decode.data);
                 return res.json({
                     access_token : data,
                     refresh_token : ""
@@ -81,9 +81,8 @@ async function refreshRegen(req: Request, res: Response){
 ------------------------------------------------------------------------------
 */
 
-function createAcToken(id){
-    const data = {id : id}
-    const acToken = jwt.sign(data, secretKey, {expiresIn : accessExpireTime});
+function createAcToken(data){
+    const acToken = jwt.sign({data: data}, secretKey, {expiresIn : accessExpireTime});
     return acToken;
 }
 
