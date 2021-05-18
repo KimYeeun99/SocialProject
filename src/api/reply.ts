@@ -66,7 +66,7 @@ async function readAllReply(req: Request, res: Response) {
   try {
     const boardId = req.params.boardid;
     const rows = await db(
-      `SELECT * FROM reply where board_id=? order by parent_id, level, regdate`,
+      `SELECT *, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount FROM reply where board_id=? order by parent_id, level, regdate`,
       [boardId]
     );
 

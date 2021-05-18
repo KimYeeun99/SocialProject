@@ -105,17 +105,17 @@ async function readOneBoard(req: Request, res: Response) {
       [board_id]
     );
 
-    if (!rows) {
+    if (!rows[0]) {
       res.status(400).send({ success: false });
+    } else {
+      const read: Board = rows[0];
+      read.regdate = formatDate(read.regdate);
+
+      res.json({
+        success: true,
+        data: read,
+      });
     }
-
-    const read: Board = rows[0];
-    read.regdate = formatDate(read.regdate);
-
-    res.json({
-      success: true,
-      data: read,
-    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
