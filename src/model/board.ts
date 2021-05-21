@@ -5,6 +5,8 @@ interface Board {
   user_id: string;
   regdate: string;
   goodCount: number;
+  scrapCount: number;
+  replyCount: number;
 }
 
 export { Board };
