@@ -1,9 +1,13 @@
 import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
-import { db } from "../db/db";
 import moment from "moment";
 import { Board } from "../model/board";
 import tokens from "./token";
+import { board_img } from "./upload";
+import { BOARD_PATH } from "./upload";
+import fs from "fs";
+import {MulterRequest} from "./upload";
+import {pool} from "../db/db";
 
 export const boardScheme = yup.object({
   title: yup.string().required(),
@@ -14,30 +18,46 @@ function formatDate(date) {
   return moment(date).format("YYYY-MM-DD HH:mm:ss");
 }
 
-async function insertBoard(req: Request, res: Response) {
+async function insertBoard(req: MulterRequest, res: Response) {
+  const conn = await pool.getConnection();
   try {
-    const { title, body } = boardScheme.validateSync(req.body);
-
     const user_id = req.body.data.id;
+    
+    board_img(req, res, async function(){
+      const { title, body } = boardScheme.validateSync(req.body);
+      await conn.beginTransaction();
+  
+      const rows = await conn.query(
+        "INSERT INTO board (title, body, user_id) values (?, ?, ?)",
+        [title, body, user_id]
+      );
+      
+      const data = JSON.parse(JSON.stringify(rows[0]));
+      const insertId = data.insertId;
+      
+      if(req.files){
+        for(var i=0; i<req.files.length; i++){
+          await conn.query("INSERT INTO boardpath (board_id, path) values (?, ?)", [insertId, req.files[i].filename]);  
+        }
+      }
 
-    const rows = await db(
-      "INSERT INTO board (title, body, user_id) values (?, ?, ?)",
-      [title, body, user_id]
-    );
-    res.send({
-      success: true,
-    });
+      await conn.commit();
+      res.send({ success: true });
+    })
   } catch (error) {
+    await conn.rollback();
     res.status(500).send({
-      success: false,
+      success: false
     });
+  } finally{
+    conn.release();
   }
 }
 
 async function searchBoard(req: Request, res: Response) {
   try {
     const title = req.query.title;
-    const rows = await db(
+    const rows = await pool.query(
       `select *,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
@@ -46,7 +66,7 @@ async function searchBoard(req: Request, res: Response) {
       ["%" + title + "%", "%" + title + "%"]
     );
 
-    const data = JSON.parse(JSON.stringify(rows));
+    const data = JSON.parse(JSON.stringify(rows[0]));
     const list = [];
 
     data.forEach((value) => {
@@ -67,7 +87,7 @@ async function searchBoard(req: Request, res: Response) {
 
 async function readAllBoard(req: Request, res: Response) {
   try {
-    const rows = await db(
+    const rows = await pool.query(
       `select *,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
@@ -75,7 +95,7 @@ async function readAllBoard(req: Request, res: Response) {
       from board order by regdate desc`,
       []
     );
-    const data: Array<Board> = JSON.parse(JSON.stringify(rows));
+    const data: Array<Board> = JSON.parse(JSON.stringify(rows[0]));
     const list: Array<Board> = [];
 
     data.forEach((value) => {
@@ -96,7 +116,7 @@ async function readAllBoard(req: Request, res: Response) {
 async function readOneBoard(req: Request, res: Response) {
   try {
     const board_id = req.params.id;
-    const rows = await db(
+    const rows = await pool.query(
       `select *,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
@@ -108,66 +128,120 @@ async function readOneBoard(req: Request, res: Response) {
     if (!rows[0]) {
       res.status(400).send({ success: false });
     } else {
-      const read: Board = rows[0];
+      const read = JSON.parse(JSON.stringify(rows[0]));
       read.regdate = formatDate(read.regdate);
+
+      const rows2 = await pool.query("SELECT path FROM boardpath WHERE board_id = ?", [board_id]);
+      const data = JSON.parse(JSON.stringify(rows2[0]));
+      var path = [];
+
+      data.forEach(e => {
+        path.push("/img/board/" + e.path);
+      })
 
       res.json({
         success: true,
         data: read,
+        imagepath : path
       });
     }
   } catch (error) {
-    console.log(error);
     res.status(500).send({
       success: false,
     });
   }
 }
 
-async function updateBoard(req: Request, res: Response) {
+async function updateBoard(req: MulterRequest, res: Response) {
+  const conn = await pool.getConnection();
   try {
-    const board_id = Number(req.params.id);
-    const { title, body } = boardScheme.validateSync(req.body);
-    const check = await db(
-      "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
-      [board_id, req.body.data.id]
-    );
+    await conn.beginTransaction();
+    const userId = req.body.data.id;
+    board_img(req, res, async function(){
+      const board_id = Number(req.params.id);
+      const { title, body } = boardScheme.validateSync(req.body);
+      const check = await conn.query(
+        "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
+        [board_id, userId]
+      );
 
-    if (!check[0]) return res.status(401).send({ success: false });
+      if (!check[0]) return res.status(401).send({ success: false });
 
-    const rows = await db("UPDATE board SET title=?, body=? WHERE board_id=?", [
-      title,
-      body,
-      board_id,
-    ]);
-    res.json({
-      success: true,
-    });
+      const path = await conn.query("SELECT path FROM boardpath WHERE board_id=?", [board_id]);
+      const pathdata = JSON.parse(JSON.stringify(path[0]));
+
+      for(var i=0; i<pathdata.length; i++){
+        fs.unlink(BOARD_PATH + pathdata[i].path, function(err){
+          if(err){
+           console.log(err);
+          }
+        });
+      }
+      await conn.query("DELETE FROM boardpath WHERE board_id = ?", [board_id]);
+
+      const rows = await conn.query("UPDATE board SET title=?, body=? WHERE board_id=?", [
+        title,
+        body,
+        board_id,
+      ]);
+
+      if(req.files){
+        for(var i=0; i<req.files.length; i++){
+          await conn.query("INSERT INTO boardpath (board_id, path) values (?, ?)", [board_id, req.files[i].filename]);  
+        }
+      }
+
+      await conn.commit();
+
+      res.json({
+        success: true,
+      });
+    })
   } catch (error) {
+    await conn.rollback();
     res.status(500).send({
       success: false,
     });
+  } finally{
+    conn.release();
   }
 }
 
 async function deleteBoard(req: Request, res: Response) {
+  const conn = await pool.getConnection();
   try {
+    await conn.beginTransaction();
     const board_id = req.params.id;
-    const check = await db(
+    const check = await conn.query(
       "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
       [board_id, req.body.data.id]
     );
 
     if (!check[0]) return res.status(401).send({ success: false });
 
-    const rows = await db("DELETE FROM board WHERE board_id=?", [board_id]);
+    const path = await conn.query("SELECT path FROM boardpath WHERE board_id=?", [board_id]);
+    const pathdata = JSON.parse(JSON.stringify(path[0]));
+
+    for(var i=0; i<pathdata.length; i++){
+      fs.unlink(BOARD_PATH + pathdata[i].path, function(err){
+        if(err){
+          console.log(err);
+        }
+      });
+    }
+
+    const rows = await conn.query("DELETE FROM board WHERE board_id=?", [board_id]);
+    await conn.commit();
     res.json({
       success: true,
     });
   } catch (error) {
+    await conn.rollback();
     res.status(500).send({
       success: false,
     });
+  } finally{
+    conn.release();
   }
 }
 
@@ -176,22 +250,21 @@ async function scrapBoard(req: Request, res: Response) {
     const boardId = req.params.id;
     const userId = req.body.data.id;
 
-    const check = await db(
+    const rows : any = await pool.query(
       "SELECT scrap_id FROM scrap WHERE board_id=? AND user_id=?",
       [boardId, userId]
     );
 
+    const check = JSON.parse(JSON.stringify(rows[0]));
+    
     if (check[0]) {
-      await db("DELETE FROM scrap WHERE scrap_id=?", [check[0].scrap_id]);
+      await pool.query("DELETE FROM scrap WHERE scrap_id=?", [check[0].scrap_id]);
       res.json({
         success: true,
         stat: "DELETE",
       });
     } else {
-      await db("INSERT INTO scrap (board_id, user_id) VALUES (?, ?)", [
-        boardId,
-        userId,
-      ]);
+      await pool.query("INSERT INTO scrap (board_id, user_id) VALUES (?, ?)", [boardId, userId]);
       res.json({
         success: true,
         stat: "INSERT",
@@ -199,7 +272,7 @@ async function scrapBoard(req: Request, res: Response) {
     }
   } catch (error) {
     res.status(500).send({
-      success: false,
+      success: false
     });
   }
 }
@@ -208,7 +281,7 @@ async function readScrapBoard(req: Request, res: Response) {
   try {
     const userId = req.body.data.id;
 
-    const rows = await db(
+    const rows = await pool.query(
       `select board.*, 
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
@@ -217,7 +290,7 @@ async function readScrapBoard(req: Request, res: Response) {
       [userId]
     );
 
-    const data = JSON.parse(JSON.stringify(rows));
+    const data = JSON.parse(JSON.stringify(rows[0]));
     const list = [];
 
     data.forEach((value) => {
@@ -239,18 +312,20 @@ async function readScrapBoard(req: Request, res: Response) {
 async function scrapCount(req: Request, res: Response) {
   try {
     const boardId = req.params.id;
-    const rows = await db(
-      "select count(scrap_id) as scrapcount from scrap where board_id=?",
+    const rows : any = await pool.query(
+      "select count(scrap_id) as scrapCount from scrap where board_id=?",
       [boardId]
     );
 
+    const check = JSON.parse(JSON.stringify(rows[0]));
+
     var count = 0;
 
-    if (rows[0]) count = rows[0].scrapcount;
+    if (check[0]) count = check[0].scrapCount;
 
     res.json({
       success: true,
-      scrapcount: count,
+      scrapCount: count
     });
   } catch (error) {
     res.status(500).send({
@@ -262,18 +337,19 @@ async function scrapCount(req: Request, res: Response) {
 async function goodCount(req: Request, res: Response) {
   try {
     const boardId = req.params.id;
-    const rows = await db(
-      "select count(board_id) as goodcount from boardgood where board_id=? group by board_id",
+    const rows : any = await pool.query(
+      "select count(board_id) as goodCount from boardgood where board_id=? group by board_id",
       [boardId]
     );
 
+    const check = JSON.parse(JSON.stringify(rows[0]));
     var count = 0;
 
-    if (rows[0]) count = rows[0].goodcount;
+    if (check[0]) count = check[0].goodCount;
 
     res.json({
       success: true,
-      goodcount: count,
+      goodCount: count,
     });
   } catch (error) {
     res.status(500).send({
@@ -287,21 +363,23 @@ async function goodBoard(req: Request, res: Response) {
     const user_id = req.body.data.id;
     const board_id = req.params.id;
 
-    const check = await db(
+    const rows :any = await pool.query(
       "SELECT good_id FROM BoardGood WHERE board_id=? and user_id=?",
       [board_id, user_id]
     );
 
+    const check = JSON.parse(JSON.stringify(rows[0]));
+
     if (check[0]) {
-      await db("DELETE FROM boardgood WHERE good_id=?", [check[0].good_id]);
+      await pool.query("DELETE FROM boardgood WHERE good_id=?", [check[0].good_id]);
       res.json({
         success: true,
         stat: "DELETE",
       });
     } else {
-      await db("INSERT INTO boardgood (user_id, board_id) VALUES (?, ?)", [
+      await pool.query("INSERT INTO boardgood (user_id, board_id) VALUES (?, ?)", [
         user_id,
-        board_id,
+        board_id
       ]);
       res.json({
         success: true,
@@ -318,7 +396,7 @@ async function goodBoard(req: Request, res: Response) {
 async function myReplyBoard(req: Request, res: Response) {
   try {
     const userId = req.body.data.id;
-    const rows = await db(
+    const rows = await pool.query(
       `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
@@ -328,7 +406,7 @@ async function myReplyBoard(req: Request, res: Response) {
       [userId]
     );
 
-    const data = JSON.parse(JSON.stringify(rows));
+    const data = JSON.parse(JSON.stringify(rows[0]));
     const list = [];
 
     data.forEach((value) => {
@@ -338,11 +416,11 @@ async function myReplyBoard(req: Request, res: Response) {
 
     res.json({
       success: true,
-      data: list,
+      data: list
     });
   } catch (error) {
     res.status(500).send({
-      success: false,
+      success: false
     });
   }
 }

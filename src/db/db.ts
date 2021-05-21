@@ -11,4 +11,7 @@ async function db(sql, params) {
     }
 }
 
+const pool = mysql.createPool(config);
+
 export { db };
+export { pool };

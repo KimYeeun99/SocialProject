@@ -1,24 +1,12 @@
-import { Router, Response, Request } from "express";
+import { Router, Response, Request, request } from "express";
 import * as yup from "yup";
 import { db } from "../db/db";
 import tokens from "./token";
 import argon2 from "argon2";
-import multer from "multer";
 import fs from "fs";
-
-const STORAGE_PATH = "public/img/";
-
-var storage = multer.diskStorage({
-  destination : function(req, file, cb) {
-    cb(null, STORAGE_PATH);
-  },
-  filename : function(req, file, cb) {
-    req.body.filename = file.fieldname + '-' + Date.now() + '.jpg';
-    cb(null, req.body.filename);
-  }
-})
-
-var upload = multer({storage : storage});
+import { profile_img } from "./upload";
+import {PROFILE_PATH} from "./upload";
+import {MulterRequest} from "./upload";
 
 export const registerScheme = yup.object({
   id: yup.string().required(),
@@ -44,21 +32,10 @@ async function register(req: Request, res: Response) {
       schoolclass,
     } = registerScheme.validateSync(req.body);
     const search = await db("SELECT id FROM user WHERE id=?", [id]);
-
     const hashPassword = await argon2.hash(password);
     if (!search[0]) {
-      const rows = await db(
-        "INSERT INTO user(id, password, name, phone, nickname, birth, schoolgrade, schoolclass) VALUES(?,?,?,?,?,?,?,?)",
-        [
-          id,
-          hashPassword,
-          name,
-          phone,
-          nickname,
-          birth,
-          schoolgrade,
-          schoolclass,
-        ]
+      const rows = await db(`INSERT INTO user (id, password, name, phone, nickname, birth, schoolgrade, schoolclass) VALUES (?,?,?,?,?,?,?,?)`,
+        [id, hashPassword, name, phone, nickname, birth, schoolgrade, schoolclass]
       );
       res.send({ success: true });
     } else {
@@ -101,11 +78,12 @@ async function login(req: Request, res: Response) {
 }
 
 async function logout(req: Request, res: Response) {
-  tokens.deleteTokens(req, res);
-  req.session.destroy((err) => {
-    if (err) throw err;
-  });
-  res.send({ success: true });
+  try{
+    await tokens.deleteTokens(req, res);
+    res.send({ success: true });
+  } catch(error){
+    res.status(500).send({success: false});
+  }
 }
 
 async function userOut(req: Request, res: Response) {
@@ -121,7 +99,7 @@ async function confirmDupName(req: Request, res: Response) {
   try {
     const search = await db("SELECT id FROM user WHERE id=?", [req.body.id]);
     if (!search[0]) {
-      res.status(400).send({ success: false });
+      res.send({ success: false });
     } else {
       res.send({ success: true });
     }
@@ -136,7 +114,7 @@ async function confirmDupNickname(req: Request, res: Response) {
       req.body.nickname,
     ]);
     if (!search[0]) {
-      res.status(400).send({ success: false });
+      res.send({ success: false });
     }
     res.send({ success: true });
   } catch (error) {
@@ -144,38 +122,44 @@ async function confirmDupNickname(req: Request, res: Response) {
   }
 }
 
-async function imageUpload(req: Request, res: Response){
-  try{
-    var userId = req.body.data.id;
-    var filename = req.body.filename;
-    const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
-
-    if(rows[0]){
-      fs.unlink(STORAGE_PATH + rows[0].path, async function(err){
-        await db('UPDATE imagepath SET path=? WHERE id=?', [filename, userId]);
-      });
+async function imageUpload(req: MulterRequest, res: Response){
+  var userId = req.body.data.id;
+  profile_img(req, res, async function(err){
+    if(err){
+      return res.status(400).send({
+        success: false
+      })
     } else{
-      await db('INSERT INTO imagepath VALUES (?, ?)', [userId, filename]);
-    }
-
-    res.send({success: true, filename : req.body.filename});
-  } catch(error){
-    fs.unlink(STORAGE_PATH + req.body.filename, function(err){
-      res.status(500).send({success: false});
-    });
+      try{        
+        var filename = req.file.filename;
+        const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
     
-  }
+        if(rows[0]){
+          fs.unlink(PROFILE_PATH + rows[0].path, async function(err){
+            await db('UPDATE imagepath SET path=? WHERE id=?', [filename, userId]);
+          });
+        } else{
+          await db('INSERT INTO imagepath VALUES (?, ?)', [userId, filename]);
+        }
+    
+        res.send({success: true, filename : req.body.filename});
+      } catch(error){
+        res.status(500).send({success: false});
+      }
+    }
+  })
 }
 
 async function showImage(req: Request, res: Response){
   try{
-    const rows = await db('SELECT path FROM imagepath WHERE id=?', [req.body.data.id]);
+    const userId = req.query.id;
+    const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
     
     var filepath = '';
 
     if(rows[0]){
       filepath = rows[0].path;
-      res.redirect('/img/' + filepath);
+      res.json({success: true, path: '/img/profile/' + filepath});
     } else{
       res.status(204).json({success: true});
     }
@@ -191,7 +175,7 @@ async function deleteImage(req: Request, res: Response){
     const rows = await db('SELECT path FROM imagepath WHERE id=?', [userId]);
 
     if(rows[0]){
-      fs.unlink(STORAGE_PATH + rows[0].path, async function(err){   
+      fs.unlink(PROFILE_PATH + rows[0].path, async function(err){   
         await db('DELETE FROM imagepath WHERE id=?', [userId]);    
         return res.json({success: true});
       })
@@ -212,8 +196,8 @@ router.delete("/quit", tokens.validTokenCheck, userOut);
 router.post("/confirm/name", confirmDupName);
 router.post("/confirm/nickname", confirmDupNickname);
 
-router.post("/profile", upload.single('profile'), tokens.validTokenCheck, imageUpload);
-router.get("/profile", tokens.validTokenCheck, showImage);
+router.post("/profile", tokens.validTokenCheck, imageUpload);
+router.get("/profile", showImage);
 router.delete("/profile", tokens.validTokenCheck, deleteImage);
 
 export default router;
