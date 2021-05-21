@@ -77,7 +77,7 @@ async function login(req: Request, res: Response) {
         token: token,
       });
     } else {
-      res.status(400).send({ success: false });
+      res.send({ success: false });
     }
   } catch (error) {
     res.status(500).send({ success: false });

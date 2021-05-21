@@ -3,7 +3,7 @@ import { db } from "./db/db";
 import user from "./api/user";
 import board from "./api/board";
 import reply from "./api/reply";
-import cafeteria from "./api/cafeteria";
+import cafeteria from "./api/school";
 import token from "./api/token";
 import "dotenv/config";
 
@@ -20,11 +20,11 @@ app.get("/", async (req, res) => {
   res.send(rows);
 });
 
-app.use(express.static('public'));
+app.use(express.static("public"));
 app.use("/api/user", user);
 app.use("/api/board", board);
 app.use("/api/reply", reply);
-app.use("/api/cafeteria", cafeteria);
+app.use("/api/school", cafeteria);
 
 app.get("/api/auth/refresh", token.refreshRegen);
 app.get("/api/auth/valid", token.tokenValid);
