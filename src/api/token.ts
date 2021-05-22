@@ -13,7 +13,7 @@ async function createTokens(data){
     if(await getRefToken(data.id)){
         await deleteRefToken(data.id);
     }
-    var refresh = await createRefToken(data.id);
+    var refresh = await createRefToken(data);
 
     return {
         access_token : access,
@@ -86,9 +86,9 @@ function createAcToken(data){
     return acToken;
 }
 
-async function createRefToken(id){
-    const refToken = jwt.sign({}, secretKey, {expiresIn : refreshExpireTime});
-    await db('INSERT INTO token VALUES(?, ?)',[id, refToken]);
+async function createRefToken(data){
+    const refToken = jwt.sign({data: data}, secretKey, {expiresIn : refreshExpireTime});
+    await db('INSERT INTO token VALUES(?, ?)',[data.id, refToken]);
 
     return refToken;
 }

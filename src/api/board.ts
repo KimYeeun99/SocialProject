@@ -35,8 +35,10 @@ async function insertBoard(req: MulterRequest, res: Response) {
       const data = JSON.parse(JSON.stringify(rows[0]));
       const insertId = data.insertId;
       
-      for(var i=0; i<req.files.length; i++){
-        await conn.query("INSERT INTO boardpath (board_id, path) values (?, ?)", [insertId, req.files[i].filename]);  
+      if(req.files){
+        for(var i=0; i<req.files.length; i++){
+          await conn.query("INSERT INTO boardpath (board_id, path) values (?, ?)", [insertId, req.files[i].filename]);  
+        }
       }
 
       await conn.commit();
@@ -183,8 +185,10 @@ async function updateBoard(req: MulterRequest, res: Response) {
         board_id,
       ]);
 
-      for(var i=0; i<req.files.length; i++){
-        await conn.query("INSERT INTO boardpath (board_id, path) values (?, ?)", [board_id, req.files[i].filename]);  
+      if(req.files){
+        for(var i=0; i<req.files.length; i++){
+          await conn.query("INSERT INTO boardpath (board_id, path) values (?, ?)", [board_id, req.files[i].filename]);  
+        }
       }
 
       await conn.commit();
