@@ -26,8 +26,12 @@ app.use("/api/board", board);
 app.use("/api/reply", reply);
 app.use("/api/school", cafeteria);
 
-app.get("/api/token/refresh", token.refreshRegen);
+app.get("/api/auth/refresh", token.refreshRegen);
+app.get("/api/auth/valid", token.tokenValid);
 
+app.use(function(req, res, next){
+  res.status(404).send({success: false});
+})
 app.listen(app.get("port"), () => {
   console.log("start");
 });

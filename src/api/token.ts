@@ -27,7 +27,7 @@ function deleteTokens(req: Request, res: Response){
         if(err){
             return res.status(401).send({success: false});
         }
-        await deleteRefToken(decode.id);
+        await deleteRefToken(decode.data.id);
     })
 }
 
@@ -43,8 +43,22 @@ async function validTokenCheck(req: Request, res: Response, next: NextFunction){
     })
 }
 
+async function tokenValid(req:Request, res: Response) {
+    const token = req.headers["authorization"];
+
+    jwt.verify(token, secretKey, function(err, decode){
+        if(err){
+            return res.status(401).send({success: false});
+        } else{
+            return res.json({success: true});
+        }
+    })
+}
+
 async function refreshRegen(req: Request, res: Response){
     const ref = req.headers["authorization"];
+
+    if(!ref) return res.status(400).send({success: false});
 
     const rows = await db('SELECT * FROM token WHERE token=?', [ref]);
 
@@ -121,7 +135,8 @@ const token = {
     createTokens : createTokens,
     deleteTokens : deleteTokens,
     validTokenCheck : validTokenCheck,
-    refreshRegen : refreshRegen
+    refreshRegen : refreshRegen,
+    tokenValid : tokenValid
 }
 
 export default token

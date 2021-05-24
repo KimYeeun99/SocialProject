@@ -32,21 +32,10 @@ async function register(req: Request, res: Response) {
       schoolclass,
     } = registerScheme.validateSync(req.body);
     const search = await db("SELECT id FROM user WHERE id=?", [id]);
-
     const hashPassword = await argon2.hash(password);
     if (!search[0]) {
-      const rows = await db(
-        "INSERT INTO user(id, password, name, phone, nickname, birth, schoolgrade, schoolclass) VALUES(?,?,?,?,?,?,?,?)",
-        [
-          id,
-          hashPassword,
-          name,
-          phone,
-          nickname,
-          birth,
-          schoolgrade,
-          schoolclass,
-        ]
+      const rows = await db(`INSERT INTO user (id, password, name, phone, nickname, birth, schoolgrade, schoolclass) VALUES (?,?,?,?,?,?,?,?)`,
+        [id, hashPassword, name, phone, nickname, birth, schoolgrade, schoolclass]
       );
       res.send({ success: true });
     } else {
@@ -89,11 +78,12 @@ async function login(req: Request, res: Response) {
 }
 
 async function logout(req: Request, res: Response) {
-  tokens.deleteTokens(req, res);
-  req.session.destroy((err) => {
-    if (err) throw err;
-  });
-  res.send({ success: true });
+  try{
+    await tokens.deleteTokens(req, res);
+    res.send({ success: true });
+  } catch(error){
+    res.status(500).send({success: false});
+  }
 }
 
 async function userOut(req: Request, res: Response) {
@@ -109,7 +99,7 @@ async function confirmDupName(req: Request, res: Response) {
   try {
     const search = await db("SELECT id FROM user WHERE id=?", [req.body.id]);
     if (!search[0]) {
-      res.status(400).send({ success: false });
+      res.send({ success: false });
     } else {
       res.send({ success: true });
     }
@@ -124,7 +114,7 @@ async function confirmDupNickname(req: Request, res: Response) {
       req.body.nickname,
     ]);
     if (!search[0]) {
-      res.status(400).send({ success: false });
+      res.send({ success: false });
     }
     res.send({ success: true });
   } catch (error) {
@@ -169,7 +159,7 @@ async function showImage(req: Request, res: Response){
 
     if(rows[0]){
       filepath = rows[0].path;
-      res.redirect('/img/profile/' + filepath);
+      res.json({success: true, path: '/img/profile/' + filepath});
     } else{
       res.status(204).json({success: true});
     }
