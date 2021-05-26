@@ -59,6 +59,7 @@ async function login(req: Request, res: Response) {
     else if (await argon2.verify(rows[0].password, password)) {
       const data = {
         id: rows[0].id,
+        nickname : rows[0].nickname,
         schoolgrade : rows[0].schoolgrade,
         schoolclass : rows[0].schoolclass
       }
@@ -142,7 +143,7 @@ async function imageUpload(req: MulterRequest, res: Response){
           await db('INSERT INTO imagepath VALUES (?, ?)', [userId, filename]);
         }
     
-        res.send({success: true, filename : req.body.filename});
+        res.send({success: true});
       } catch(error){
         res.status(500).send({success: false});
       }

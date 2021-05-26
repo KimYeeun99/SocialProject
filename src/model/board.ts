@@ -7,6 +7,9 @@ interface Board {
   goodCount: number;
   scrapCount: number;
   replyCount: number;
+  anony : string;
+  type : string;
+  nickname: string;
 }
 
 export { Board };

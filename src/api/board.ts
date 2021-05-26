@@ -12,6 +12,7 @@ import {pool} from "../db/db";
 export const boardScheme = yup.object({
   title: yup.string().required(),
   body: yup.string().required(),
+  anony: yup.string().required()
 });
 
 function formatDate(date) {
@@ -20,16 +21,16 @@ function formatDate(date) {
 
 async function insertBoard(req: MulterRequest, res: Response) {
   const conn = await pool.getConnection();
-  try {
-    const user_id = req.body.data.id;
-    
+  const user_id = req.body.data.id;   
     board_img(req, res, async function(){
-      const { title, body } = boardScheme.validateSync(req.body);
+      try {
+      const { title, body, anony } = boardScheme.validateSync(req.body);
+      const type = req.query.type;
       await conn.beginTransaction();
   
       const rows = await conn.query(
-        "INSERT INTO board (title, body, user_id) values (?, ?, ?)",
-        [title, body, user_id]
+        "INSERT INTO board (title, body, user_id, type, anony) values (?, ?, ?, ?, ?)",
+        [title, body, user_id, type, anony]
       );
       
       const data = JSON.parse(JSON.stringify(rows[0]));
@@ -43,27 +44,29 @@ async function insertBoard(req: MulterRequest, res: Response) {
 
       await conn.commit();
       res.send({ success: true });
-    })
-  } catch (error) {
-    await conn.rollback();
-    res.status(500).send({
-      success: false
-    });
-  } finally{
-    conn.release();
-  }
+      } catch (error) {
+        await conn.rollback();
+        res.status(500).send({
+          success: false
+        });
+      } finally{
+        conn.release();
+      }
+    }) 
 }
 
 async function searchBoard(req: Request, res: Response) {
   try {
     const title = req.query.title;
+    const type = req.query.type;
     const rows = await pool.query(
-      `select *,
+      `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
-      from board where title like ? or body like ? order by regdate desc`,
-      ["%" + title + "%", "%" + title + "%"]
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+      (select nickname from user where id=board.user_id) as nickname 
+      from board where type=? and (title like ? or body like ?) order by regdate desc`,
+      [type ,"%" + title + "%", "%" + title + "%"]
     );
 
     const data = JSON.parse(JSON.stringify(rows[0]));
@@ -87,13 +90,15 @@ async function searchBoard(req: Request, res: Response) {
 
 async function readAllBoard(req: Request, res: Response) {
   try {
+    const type = req.query.type;
     const rows = await pool.query(
-      `select *,
+      `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
-      from board order by regdate desc`,
-      []
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+      (select nickname from user where id=board.user_id) as nickname 
+      from board where type=? order by regdate desc`,
+      [type]
     );
     const data: Array<Board> = JSON.parse(JSON.stringify(rows[0]));
     const list: Array<Board> = [];
@@ -117,10 +122,11 @@ async function readOneBoard(req: Request, res: Response) {
   try {
     const board_id = req.params.id;
     const rows = await pool.query(
-      `select *,
+      `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+      (select nickname from user where id=board.user_id) as nickname 
       from board where board_id = ?`,
       [board_id]
     );
@@ -159,7 +165,7 @@ async function updateBoard(req: MulterRequest, res: Response) {
     const userId = req.body.data.id;
     board_img(req, res, async function(){
       const board_id = Number(req.params.id);
-      const { title, body } = boardScheme.validateSync(req.body);
+      const { title, body, anony } = boardScheme.validateSync(req.body);
       const check = await conn.query(
         "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
         [board_id, userId]
@@ -179,9 +185,10 @@ async function updateBoard(req: MulterRequest, res: Response) {
       }
       await conn.query("DELETE FROM boardpath WHERE board_id = ?", [board_id]);
 
-      const rows = await conn.query("UPDATE board SET title=?, body=? WHERE board_id=?", [
+      const rows = await conn.query("UPDATE board SET title=?, body=?, anony=? WHERE board_id=?", [
         title,
         body,
+        anony,
         board_id,
       ]);
 
@@ -285,7 +292,8 @@ async function readScrapBoard(req: Request, res: Response) {
       `select board.*, 
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+      (select nickname from user where user.id=board.user_id) as nickname 
       from scrap inner join board on board.board_id=scrap.board_id where scrap.user_id=? order by regdate desc`,
       [userId]
     );
@@ -400,7 +408,8 @@ async function myReplyBoard(req: Request, res: Response) {
       `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+      (select nickname from user where user.id=board.user_id) as nickname
       from (select distinct board_id from reply where user_id=?) as MR inner join board on MR.board_id=board.board_id 
       order by regdate desc`,
       [userId]

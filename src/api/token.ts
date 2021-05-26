@@ -50,7 +50,7 @@ async function tokenValid(req:Request, res: Response) {
         if(err){
             return res.status(401).send({success: false});
         } else{
-            return res.json({success: true});
+            return res.json({success: true, data: decode.data});
         }
     })
 }
