@@ -12,11 +12,13 @@ export const registerScheme = yup.object({
   id: yup.string().required(),
   password: yup.string().required(),
   name: yup.string().required(),
-  nickname: yup.string().required(),
   birth: yup.date().required(),
   phone: yup.string().required(),
   schoolgrade: yup.number().required(),
   schoolclass: yup.number().required(),
+  schoolnumber: yup.number().required(),
+  role: yup.string().required(),
+  year: yup.number().required()
 });
 
 async function register(req: Request, res: Response) {
@@ -26,16 +28,18 @@ async function register(req: Request, res: Response) {
       password,
       name,
       phone,
-      nickname,
       birth,
       schoolgrade,
       schoolclass,
+      schoolnumber,
+      role,
+      year
     } = registerScheme.validateSync(req.body);
     const search = await db("SELECT id FROM user WHERE id=?", [id]);
     const hashPassword = await argon2.hash(password);
     if (!search[0]) {
-      const rows = await db(`INSERT INTO user (id, password, name, phone, nickname, birth, schoolgrade, schoolclass) VALUES (?,?,?,?,?,?,?,?)`,
-        [id, hashPassword, name, phone, nickname, birth, schoolgrade, schoolclass]
+      const rows = await db(`INSERT INTO user (id, password, name, phone, birth, schoolgrade, schoolclass, schoolnumber, role, year) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        [id, hashPassword, name, phone, birth, schoolgrade, schoolclass, schoolnumber, role, year]
       );
       res.send({ success: true });
     } else {
@@ -59,9 +63,11 @@ async function login(req: Request, res: Response) {
     else if (await argon2.verify(rows[0].password, password)) {
       const data = {
         id: rows[0].id,
-        nickname : rows[0].nickname,
         schoolgrade : rows[0].schoolgrade,
-        schoolclass : rows[0].schoolclass
+        schoolclass : rows[0].schoolclass,
+        schoolnumber: rows[0].schoolnumber,
+        role: rows[0].role,
+        year: rows[0].year
       }
 
       const token = await tokens.createTokens(data);
@@ -104,20 +110,6 @@ async function confirmDupName(req: Request, res: Response) {
     } else {
       res.send({ success: true });
     }
-  } catch (error) {
-    res.status(500).send({ success: false });
-  }
-}
-
-async function confirmDupNickname(req: Request, res: Response) {
-  try {
-    const search = await db("SELECT nickname FROM user WHERE nickname=?", [
-      req.body.nickname,
-    ]);
-    if (!search[0]) {
-      res.send({ success: false });
-    }
-    res.send({ success: true });
   } catch (error) {
     res.status(500).send({ success: false });
   }
@@ -195,7 +187,6 @@ router.post("/login", login);
 router.post("/logout", tokens.validTokenCheck, logout);
 router.delete("/quit", tokens.validTokenCheck, userOut);
 router.post("/confirm/name", confirmDupName);
-router.post("/confirm/nickname", confirmDupNickname);
 
 router.post("/profile", tokens.validTokenCheck, imageUpload);
 router.get("/profile", showImage);

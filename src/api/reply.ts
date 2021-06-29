@@ -32,6 +32,7 @@ async function insertReply(req: Request, res: Response) {
     ]);
     res.json({
       success: true,
+      data: data
     });
   } catch (error) {
     res.status(500).send({

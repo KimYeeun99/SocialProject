@@ -36,4 +36,4 @@ app.listen(app.get("port"), () => {
   console.log("start");
 });
 
-module.exports = app;
+export default app;

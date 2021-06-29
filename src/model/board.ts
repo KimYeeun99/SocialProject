@@ -9,7 +9,6 @@ interface Board {
   replyCount: number;
   anony : string;
   type : string;
-  nickname: string;
 }
 
 export { Board };
