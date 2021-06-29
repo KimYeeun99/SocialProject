@@ -5,6 +5,10 @@ interface Board {
   user_id: string;
   regdate: string;
   goodCount: number;
+  scrapCount: number;
+  replyCount: number;
+  anony : string;
+  type : string;
 }
 
 export { Board };
