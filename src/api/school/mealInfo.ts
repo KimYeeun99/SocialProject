@@ -25,27 +25,8 @@ async function getCafeteria(req: Request, res: Response) {
     }
 }
 
-//학사정보
-async function getSchedule(req: Request, res: Response) {
-    try {
-        const school = await neis.getSchoolInfo({
-            SCHUL_NM: "상명고등학교",
-        });
+export { getCafeteria };
+// const router = Router();
+// router.get("/cafeteria", getCafeteria);
 
-        const schedule = await neis.getSchedule({
-            ATPT_OFCDC_SC_CODE: school[0].ATPT_OFCDC_SC_CODE,
-            SD_SCHUL_CODE: school[0].SD_SCHUL_CODE,
-            AA_YMD: req.body.AA_YMD,
-        });
-
-        res.send({ schedule, success: true });
-    } catch (error) {
-        res.status(500).send({ error: error.message, success: false });
-    }
-}
-
-const router = Router();
-router.get("/cafeteria", getCafeteria);
-router.get("/schedule", getSchedule);
-
-export default router;
+// export default router;
