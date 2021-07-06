@@ -65,10 +65,13 @@ async function insertSubReply(req: Request, res: Response) {
 
 async function readAllReply(req: Request, res: Response) {
     try {
+        const userId = req.body.data.id;
         const boardId = req.params.boardid;
         const rows = await db(
-            `SELECT *, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount FROM reply where board_id=? order by parent_id, level, regdate`,
-            [boardId]
+            `SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
+            if((select count(reply_id) from replygood WHERE user_id=? AND replygood.reply_id=reply.reply_id) > 0 , 'Y', 'N') as goodCheck
+             FROM reply where board_id=? order by parent_id, level, regdate`,
+            [userId, boardId]
         );
 
         var list = JSON.parse(JSON.stringify(rows));
@@ -97,6 +100,7 @@ async function readAllReply(req: Request, res: Response) {
             data: tree,
         });
     } catch (error) {
+        console.log(error);
         res.status(500).send({
             success: false,
         });

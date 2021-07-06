@@ -22,7 +22,7 @@ router.get("/replycount/:boardid", replyCount);
 // 댓글 CRUD
 router.post("/:boardid", tokens.validTokenCheck, insertReply);
 router.post("/:boardid/:replyid", tokens.validTokenCheck, insertSubReply);
-router.get("/:boardid", readAllReply);
+router.get("/:boardid", tokens.loginCheck, readAllReply);
 router.put("/:boardid/:replyid", tokens.validTokenCheck, updateReply);
 router.delete("/:boardid/:replyid", tokens.validTokenCheck, deleteReply);
 

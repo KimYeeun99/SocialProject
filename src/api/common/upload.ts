@@ -32,8 +32,4 @@ var board_storage = multer.diskStorage({
 var profile_img = multer({ storage: prof_storage }).single("profile");
 var board_img = multer({ storage: board_storage }).array("images");
 
-export { profile_img };
-export { board_img };
-export { PROFILE_PATH };
-export { BOARD_PATH };
-export { MulterRequest };
+export { profile_img, board_img, PROFILE_PATH, BOARD_PATH, MulterRequest };

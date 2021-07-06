@@ -26,7 +26,10 @@ app.use("/api/board", board);
 app.use("/api/reply", reply);
 app.use("/api/school", school);
 
-app.get("/api/token/refresh", token.refreshRegen);
+
+// 토큰 인증
+app.get("/api/auth/refresh", token.refreshRegen);
+app.get("/api/auth/valid", token.tokenValid);
 
 app.listen(app.get("port"), () => {
     console.log("start");

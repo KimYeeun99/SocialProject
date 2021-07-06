@@ -122,16 +122,19 @@ async function readAllBoard(req: Request, res: Response) {
 
 async function readOneBoard(req: Request, res: Response) {
     try {
+        const userId = req.body.data.id;
         const board_id = req.params.id;
         const rows = await pool.query(
             `select board.*,
       (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
       (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+      if((select count(board_id) from boardgood WHERE user_id=? AND boardgood.board_id=board.board_id) > 0 , 'Y', 'N') as goodCheck,
+      if((select count(board_id) from scrap WHERE user_id=? AND scrap.board_id=board.board_id) > 0 , 'Y', 'N') as scrapCheck 
       from board where board_id = ?`,
-            [board_id]
+            [userId, userId, board_id]
         );
-
+        
         if (!rows[0]) {
             res.status(400).send({ success: false });
         } else {
