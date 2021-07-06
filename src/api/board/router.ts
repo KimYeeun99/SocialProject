@@ -1,12 +1,13 @@
 import { Router } from "express";
 import tokens from "../common/token";
 import {
-    deleteBoard,
-    insertBoard,
-    readAllBoard,
-    readOneBoard,
-    searchBoard,
-    updateBoard,
+  deleteBoard,
+  insertBoard,
+  readAllBoard,
+  readOneBoard,
+  searchBoard,
+  updateBoard,
+  myReplyBoard,
 } from "./board";
 import { goodBoard, goodCount } from "./good";
 import { readScrapBoard, scrapBoard, scrapCount } from "./scrap";
@@ -29,5 +30,8 @@ router.get("/goodcount/:id", goodCount);
 router.get("/scrap", tokens.validTokenCheck, readScrapBoard);
 router.get("/scrap/:id", tokens.validTokenCheck, scrapBoard);
 router.get("/scrapcount/:id", scrapCount);
+
+//내가 단 댓글 게시글 조회
+router.get("/myreply", tokens.validTokenCheck, myReplyBoard);
 
 export default router;
