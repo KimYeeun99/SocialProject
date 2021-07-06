@@ -11,6 +11,7 @@ import {
 } from "./board";
 import { goodBoard, goodCount } from "./good";
 import { readScrapBoard, scrapBoard, scrapCount } from "./scrap";
+import { reportBoard, getReportById } from "./report";
 
 const router = Router();
 // 게시글 좋아요
@@ -33,5 +34,8 @@ router.get("/:id", tokens.loginCheck, readOneBoard);
 router.put("/:id", tokens.validTokenCheck, updateBoard);
 router.delete("/:id", tokens.validTokenCheck, deleteBoard);
 
+//신고기능
+router.post("/report", tokens.validTokenCheck, reportBoard);
+router.get("/report", tokens.loginCheck, getReportById);
 
 export default router;
