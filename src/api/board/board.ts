@@ -8,6 +8,7 @@ import { BOARD_PATH } from "../common/upload";
 import fs from "fs";
 import { MulterRequest } from "../common/upload";
 import { pool } from "../../db/db";
+import { db } from "../../db/db";
 
 export const boardScheme = yup.object({
     title: yup.string().required(),
@@ -125,16 +126,16 @@ async function readOneBoard(req: Request, res: Response) {
         const userId = req.body.data.id;
         const board_id = req.params.id;
         const rows = await pool.query(
-            `select board.*,
-      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
-      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
-      (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
-      if((select count(board_id) from boardgood WHERE user_id=? AND boardgood.board_id=board.board_id) > 0 , 'Y', 'N') as goodCheck,
-      if((select count(board_id) from scrap WHERE user_id=? AND scrap.board_id=board.board_id) > 0 , 'Y', 'N') as scrapCheck 
-      from board where board_id = ?`,
+        `select board.*,
+        (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+        (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+        (select count(board_id) from scrap where board.board_id=scrap.board_id) as scrapCount,
+        if((select count(board_id) from boardgood WHERE user_id=? AND boardgood.board_id=board.board_id) > 0 , 'Y', 'N') as goodCheck,
+        if((select count(board_id) from scrap WHERE user_id=? AND scrap.board_id=board.board_id) > 0 , 'Y', 'N') as scrapCheck 
+        from board where board_id = ?`,
             [userId, userId, board_id]
         );
-        
+
         if (!rows[0]) {
             res.status(400).send({ success: false });
         } else {
@@ -193,9 +194,7 @@ async function updateBoard(req: MulterRequest, res: Response) {
                     }
                 });
             }
-            await conn.query("DELETE FROM boardpath WHERE board_id = ?", [
-                board_id,
-            ]);
+            await conn.query("DELETE FROM boardpath WHERE board_id = ?", [board_id]);
 
             const rows = await conn.query(
                 "UPDATE board SET title=?, body=? WHERE board_id=?",
@@ -270,6 +269,38 @@ async function deleteBoard(req: Request, res: Response) {
     }
 }
 
+async function myReplyBoard(req: Request, res: Response) {
+    try {
+        const userId = req.body.data.id;
+        const rows = await db(
+            `select board.*,
+      (select count(board_id) from boardgood where board.board_id=boardgood.board_id) as goodCount, 
+      (select count(board_id) from reply where board.board_id=reply.board_id) as replyCount, 
+      (select count(board_id) from scrap where board.board_id=scrap.board_id) as ScrapCount 
+      from (select distinct board_id from reply where user_id=?) as MR inner join board on MR.board_id=board.board_id 
+      order by regdate desc`,
+            [userId]
+        );
+
+        const data = JSON.parse(JSON.stringify(rows));
+        const list = [];
+
+        data.forEach((value) => {
+            value.regdate = formatDate(value.regdate);
+            list.push(value);
+        });
+
+        res.json({
+            success: true,
+            data: list,
+        });
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+        });
+    }
+}
+
 export {
     insertBoard,
     searchBoard,
@@ -277,6 +308,7 @@ export {
     readOneBoard,
     updateBoard,
     deleteBoard,
+    myReplyBoard,
 };
 // const router = Router();
 
