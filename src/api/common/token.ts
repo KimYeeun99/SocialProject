@@ -92,6 +92,17 @@ async function refreshRegen(req: Request, res: Response) {
     }
 }
 
+async function loginCheck(req: Request, res: Response, next: NextFunction){
+    const token = req.headers["authorization"];
+
+    if(token) validTokenCheck(req, res, next);
+    else{
+        const data = {id : ''};
+        req.body.data = data;
+        next();
+    }
+}
+
 /*
 ------------------------------------------------------------------------------
                             Supporting Function
@@ -144,6 +155,7 @@ const token = {
     validTokenCheck: validTokenCheck,
     refreshRegen: refreshRegen,
     tokenValid: tokenValid,
+    loginCheck : loginCheck
 };
 
 export default token;
