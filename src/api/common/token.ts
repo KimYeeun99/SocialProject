@@ -31,7 +31,7 @@ function deleteTokens(req: Request, res: Response) {
     });
 }
 
-async function validTokenCheck(
+async function loginCheck(
     req: Request,
     res: Response,
     next: NextFunction
@@ -47,7 +47,7 @@ async function validTokenCheck(
     });
 }
 
-async function tokenValid(req: Request, res: Response) {
+async function validCheck(req: Request, res: Response) {
     const token = req.headers["authorization"];
 
     jwt.verify(token, secretKey, function (err, decode) {
@@ -59,7 +59,7 @@ async function tokenValid(req: Request, res: Response) {
     });
 }
 
-async function refreshRegen(req: Request, res: Response) {
+async function tokenRefresh(req: Request, res: Response) {
     const ref = req.headers["authorization"];
 
     if (!ref) return res.status(400).send({ success: false });
@@ -92,10 +92,10 @@ async function refreshRegen(req: Request, res: Response) {
     }
 }
 
-async function loginCheck(req: Request, res: Response, next: NextFunction){
+async function loginStatusCheck(req: Request, res: Response, next: NextFunction){
     const token = req.headers["authorization"];
 
-    if(token) validTokenCheck(req, res, next);
+    if(token) loginCheck(req, res, next);
     else{
         const data = {id : ''};
         req.body.data = data;
@@ -152,10 +152,10 @@ function refreshTimeCheck(time) {
 const token = {
     createTokens: createTokens,
     deleteTokens: deleteTokens,
-    validTokenCheck: validTokenCheck,
-    refreshRegen: refreshRegen,
-    tokenValid: tokenValid,
-    loginCheck : loginCheck
+    loginCheck : loginCheck,
+    validCheck : validCheck,
+    tokenRefresh: tokenRefresh,
+    loginStatusCheck: loginStatusCheck
 };
 
 export default token;

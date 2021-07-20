@@ -14,16 +14,16 @@ const router = Router();
 
 //댓글 좋아요
 router.get("/goodcount/:replyid", goodCount);
-router.get("/good/:replyid", tokens.validTokenCheck, goodReply);
+router.get("/good/:replyid", tokens.loginCheck, goodReply);
 
 //댓글 갯수
 router.get("/replycount/:boardid", replyCount);
 
 // 댓글 CRUD
-router.post("/:boardid", tokens.validTokenCheck, insertReply);
-router.post("/:boardid/:replyid", tokens.validTokenCheck, insertSubReply);
+router.post("/:boardid", tokens.loginCheck, insertReply);
+router.post("/:boardid/:replyid", tokens.loginCheck, insertSubReply);
 router.get("/:boardid", tokens.loginCheck, readAllReply);
-router.put("/:boardid/:replyid", tokens.validTokenCheck, updateReply);
-router.delete("/:boardid/:replyid", tokens.validTokenCheck, deleteReply);
+router.put("/:boardid/:replyid", tokens.loginCheck, updateReply);
+router.delete("/:boardid/:replyid", tokens.loginCheck, deleteReply);
 
 export default router;

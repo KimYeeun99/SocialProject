@@ -174,10 +174,12 @@ async function updateBoard(req: MulterRequest, res: Response) {
         board_img(req, res, async function () {
             const board_id = Number(req.params.id);
             const { title, body } = boardScheme.validateSync(req.body);
-            const check = await conn.query(
+            const rows = await conn.query(
                 "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
                 [board_id, userId]
             );
+
+            const check = JSON.parse(JSON.stringify(rows[0]));
 
             if (!check[0]) return res.status(401).send({ success: false });
 
@@ -196,7 +198,7 @@ async function updateBoard(req: MulterRequest, res: Response) {
             }
             await conn.query("DELETE FROM boardpath WHERE board_id = ?", [board_id]);
 
-            const rows = await conn.query(
+            await conn.query(
                 "UPDATE board SET title=?, body=? WHERE board_id=?",
                 [title, body, board_id]
             );
@@ -231,10 +233,12 @@ async function deleteBoard(req: Request, res: Response) {
     try {
         await conn.beginTransaction();
         const board_id = req.params.id;
-        const check = await conn.query(
+        const rows = await conn.query(
             "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
             [board_id, req.body.data.id]
         );
+
+        const check = JSON.parse(JSON.stringify(rows[0]));
 
         if (!check[0]) return res.status(401).send({ success: false });
 
@@ -252,7 +256,7 @@ async function deleteBoard(req: Request, res: Response) {
             });
         }
 
-        const rows = await conn.query("DELETE FROM board WHERE board_id=?", [
+        await conn.query("DELETE FROM board WHERE board_id=?", [
             board_id,
         ]);
         await conn.commit();
