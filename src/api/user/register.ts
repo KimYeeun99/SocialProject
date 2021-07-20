@@ -12,7 +12,7 @@ export const registerScheme = yup.object({
     schoolgrade: yup.number().required(),
     schoolclass: yup.number().required(),
     schoolnumber: yup.number().required(),
-    role: yup.string().required(),
+    role: yup.string().oneOf(["master", "leader", "student"]),
     year: yup.number().required(),
 });
 
