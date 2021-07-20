@@ -1,17 +1,17 @@
 import { Router } from "express";
 import tokens from "../common/token";
 import {
-  deleteBoard,
-  insertBoard,
-  readAllBoard,
-  readOneBoard,
-  searchBoard,
-  updateBoard,
-  myReplyBoard,
+    deleteBoard,
+    insertBoard,
+    readAllBoard,
+    readOneBoard,
+    searchBoard,
+    updateBoard,
+    myReplyBoard,
 } from "./board";
 import { goodBoard, goodCount } from "./good";
 import { readScrapBoard, scrapBoard, scrapCount } from "./scrap";
-import { reportBoard, getReportById } from "./report";
+import { reportBoard, getReportById, countReportById } from "./report";
 
 const router = Router();
 // 게시글 좋아요
@@ -37,5 +37,6 @@ router.delete("/:id", tokens.validTokenCheck, deleteBoard);
 //신고기능
 router.post("/report", tokens.validTokenCheck, reportBoard);
 router.get("/report", tokens.loginCheck, getReportById);
+router.get("/report/count", tokens.loginCheck, countReportById);
 
 export default router;
