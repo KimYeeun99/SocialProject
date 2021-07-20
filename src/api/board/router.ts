@@ -1,13 +1,13 @@
 import { Router } from "express";
 import tokens from "../common/token";
 import {
-    deleteBoard,
-    insertBoard,
-    readAllBoard,
-    readOneBoard,
-    searchBoard,
-    updateBoard,
-    myReplyBoard,
+  deleteBoard,
+  insertBoard,
+  readAllBoard,
+  readOneBoard,
+  searchBoard,
+  updateBoard,
+  myReplyBoard,
 } from "./board";
 import { goodBoard, goodCount } from "./good";
 import { readScrapBoard, scrapBoard, scrapCount } from "./scrap";
@@ -26,6 +26,11 @@ router.get("/scrapcount/:id", scrapCount);
 //내가 단 댓글 게시글 조회
 router.get("/myreply", tokens.validTokenCheck, myReplyBoard);
 
+//신고기능
+router.post("/report", tokens.validTokenCheck, reportBoard);
+router.get("/report", tokens.loginCheck, getReportById);
+router.get("/report/count", tokens.loginCheck, countReportById);
+
 // 게시글 CRUD
 router.post("/", tokens.validTokenCheck, insertBoard);
 router.get("/search", searchBoard);
@@ -33,10 +38,5 @@ router.get("/", readAllBoard);
 router.get("/:id", tokens.loginCheck, readOneBoard);
 router.put("/:id", tokens.validTokenCheck, updateBoard);
 router.delete("/:id", tokens.validTokenCheck, deleteBoard);
-
-//신고기능
-router.post("/report", tokens.validTokenCheck, reportBoard);
-router.get("/report", tokens.loginCheck, getReportById);
-router.get("/report/count", tokens.loginCheck, countReportById);
 
 export default router;
