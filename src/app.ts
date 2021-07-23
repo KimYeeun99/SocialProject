@@ -28,8 +28,8 @@ app.use("/api/school", school);
 
 
 // 토큰 인증
-app.get("/api/auth/refresh", token.refreshRegen);
-app.get("/api/auth/valid", token.tokenValid);
+app.get("/api/auth/refresh", token.tokenRefresh);
+app.get("/api/auth/valid", token.validCheck);
 
 app.listen(app.get("port"), () => {
     console.log("start");
