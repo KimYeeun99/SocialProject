@@ -21,7 +21,7 @@ const signInData = {
     schoolgrade: 1,
     schoolclass: 2,
     schoolnumber: 3,
-    role: 'Master',
+    role: 'student',
     year: 2021
 }
 
@@ -327,8 +327,8 @@ describe('토큰 기능', function() {
 
     it('토큰 재발급', function(done){
         request(app)
-        .get('/api/auth/refresh')
-        .set('Authorization', refreshToken)
+        .post('/api/auth/refresh')
+        .send({token : refreshToken})
         .expect(200, done);
     })
 })

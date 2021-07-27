@@ -1,41 +1,71 @@
 import {Request, Response} from 'express';
 import {pool} from '../../db/db';
 import * as yup from 'yup';
+import multiparty from 'multiparty';
+import xlsx from 'xlsx';
 
-export const studentSchema = yup.object({
+export const studentScheme = yup.object({
     name : yup.string().required(),
     studentId : yup.string().required()
-});
+  });
+
+function getStudentId(year, sGrade, sClass, sNumber){
+    var studentId = year + "" + sGrade;
+
+    sClass = (sClass < 10) ? "0"+sClass : sClass;
+    sNumber = (sNumber < 10) ? "0"+sNumber : sNumber;
+
+    studentId += sClass + "" + sNumber;
+
+    return studentId;    
+}
 
 // 학번, 이름 등록
 async function insertStudent(req: Request, res: Response){
     const conn = await pool.getConnection();
     try{
-        const data: Array<any> = req.body.list;
         if(req.body.data.role !== 'master'){
             return res.status(403).send({success: false});
         }
-        await conn.beginTransaction();
+    
+        var data;
+    
+        const form = new multiparty.Form({
+            autoFiles: false
+        })
+    
+        form.on('file', async function(name : any, file: any){
+            const workSheet = xlsx.readFile(file.path);
+            const sheetName = Object.keys(workSheet.Sheets);
+    
+            data = xlsx.utils.sheet_to_json(workSheet.Sheets[sheetName[0]]);
 
-        for(var i=0; i<data.length; i++){
-            const {name, studentId} = studentSchema.validateSync(data[i]);
-            const rows : any = await conn.query('SELECT student_id FROM authstudent WHERE name=? AND student_id=?',
-            [name, studentId]);
-            
-            const check = JSON.parse(JSON.stringify(rows[0]));
-
-            if(check[0]){
-                return res.status(400).send({success: false});
+            await conn.beginTransaction();
+            for(var i=0; i<data.length; i++){
+                const name = data[i].이름;
+                const studentId = getStudentId(data[i].입학년도, data[i].학년, data[i].반, data[i].번호);
+                const rows : any = await conn.query('SELECT student_id FROM authstudent WHERE name=? AND student_id=?',
+                [name, studentId]);
+                
+                const check = JSON.parse(JSON.stringify(rows[0]));
+    
+                if(check[0]){
+                    return res.status(400).send({success: false});
+                }
+                await conn.query('INSERT INTO authstudent VALUES(?, ?)', [studentId, name]);
             }
-            await conn.query('INSERT INTO authstudent VALUES(?, ?)', [studentId, name]);
-        }
-
-        await conn.commit();
-
-        res.send({success: true});
+    
+            await conn.commit();
+        })
+    
+        form.on('close', ()=>{
+            res.send({success: true})
+        })
+    
+        form.parse(req);
 
     } catch(error){
-        await conn.rollback();
+        await conn.rollback();        
         res.status(500).send({success: false});
     } finally{
         conn.release();
@@ -45,7 +75,7 @@ async function insertStudent(req: Request, res: Response){
 // 학번 인증
 async function checkStudent(req: Request, res: Response){
     try{
-        const {name, studentId} = studentSchema.validateSync(req.body);
+        const {name, studentId} = studentScheme.validateSync(req.body);
         const rows = await pool.query('SELECT * FROM authstudent WHERE name=? AND student_id=?',
          [name, studentId]);
 
@@ -92,7 +122,7 @@ async function deleteStudent(req: Request, res: Response){
         await conn.beginTransaction();
 
         for(var i=0; i<data.length; i++){
-            const {name, studentId} = studentSchema.validateSync(data[i]);
+            const {name, studentId} = studentScheme.validateSync(data[i]);
             await conn.query('DELETE FROM authstudent WHERE name=? AND student_id=?',
              [name, studentId]);
         }

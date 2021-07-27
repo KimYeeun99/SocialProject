@@ -5,8 +5,8 @@ import tokens from "../common/token";
 import moment from "moment";
 
 export const reportScheme = yup.object({
-  board_id: yup.string().required(),
-  recv_id: yup.string().required(), //게시판 글쓴이
+  reply_id: yup.string().required(),
+  recv_id: yup.string().required(), //댓글 글쓴이
   body: yup.string().required(), //신고내용
 });
 
@@ -15,13 +15,13 @@ function formatDate(date) {
 }
 
 //신고하기
-async function reportBoard(req: Request, res: Response) {
+async function reportReply(req: Request, res: Response) {
   try {
-    const { board_id, recv_id, body } = reportScheme.validateSync(req.body);
+    const { reply_id, recv_id, body } = reportScheme.validateSync(req.body);
 
     const rows = await db(
-      "INSERT INTO boardreport (board_id, recv_id, send_id, body) values (?, ?, ?, ?)",
-      [board_id, recv_id, req.body.data.id, body]
+      "INSERT INTO replyreport (reply_id, recv_id, send_id, body) values (?, ?, ?, ?)",
+      [reply_id, recv_id, req.body.data.id, body]
     );
 
     res.send({ success: true });
@@ -31,10 +31,10 @@ async function reportBoard(req: Request, res: Response) {
 }
 
 //자신이 신고한 신고목록 조회
-async function getMyReport(req: Request, res: Response) {
+async function getMyReplyReport(req: Request, res: Response) {
   try {
     const user_id = req.body.data.id;
-    const rows = await db("SELECT * FROM boardreport WHERE send_id=?", [user_id]);
+    const rows = await db("SELECT * FROM replyreport WHERE send_id=?", [user_id]);
 
     const data = JSON.parse(JSON.stringify(rows));
     const report = [];
@@ -50,11 +50,11 @@ async function getMyReport(req: Request, res: Response) {
   }
 }
 
-async function countReportById(req: Request, res: Response) {
+async function countReplyReportById(req: Request, res: Response) {
   try {
     if (req.body.data.role === "master") {
       const count = await db(
-        "SELECT recv_id, count(*) as count FROM boardreport GROUP BY recv_id",
+        "SELECT recv_id, count(*) as count FROM replyreport GROUP BY recv_id",
         []
       );
 
@@ -67,10 +67,10 @@ async function countReportById(req: Request, res: Response) {
   }
 }
 
-async function getReportById(req: Request, res: Response) {
+async function getReplyReportById(req: Request, res: Response) {
   try {
     if (req.body.data.role === "master") {
-      const rows = await db("SELECT * FROM boardreport WHERE recv_id=?", [
+      const rows = await db("SELECT * FROM replyreport WHERE recv_id=?", [
         req.query.id,
       ]);
 
@@ -91,4 +91,4 @@ async function getReportById(req: Request, res: Response) {
   }
 }
 
-export { reportBoard, getMyReport, countReportById, getReportById };
+export { reportReply, getMyReplyReport, countReplyReportById, getReplyReportById };

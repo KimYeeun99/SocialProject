@@ -9,6 +9,7 @@ import {
     insertReply,
 } from "./reply";
 import { goodCount, goodReply } from "./good";
+import { reportReply, getMyReplyReport, getReplyReportById, countReplyReportById } from './report'
 
 const router = Router();
 
@@ -19,10 +20,16 @@ router.get("/good/:replyid", tokens.loginCheck, goodReply);
 //댓글 갯수
 router.get("/replycount/:boardid", replyCount);
 
+//댓글 신고 기능
+router.post("/report", tokens.loginCheck, reportReply);
+router.get("/report/me", tokens.loginCheck, getMyReplyReport);
+router.get("/report/count", tokens.loginCheck, countReplyReportById);
+router.get("/report", tokens.loginCheck, getReplyReportById);
+
 // 댓글 CRUD
 router.post("/:boardid", tokens.loginCheck, insertReply);
 router.post("/:boardid/:replyid", tokens.loginCheck, insertSubReply);
-router.get("/:boardid", tokens.loginCheck, readAllReply);
+router.get("/:boardid", tokens.loginStatusCheck, readAllReply);
 router.put("/:boardid/:replyid", tokens.loginCheck, updateReply);
 router.delete("/:boardid/:replyid", tokens.loginCheck, deleteReply);
 
