@@ -11,7 +11,12 @@ import {
 } from "./board";
 import { goodBoard, goodCount } from "./good";
 import { readScrapBoard, scrapBoard, scrapCount } from "./scrap";
-import { reportBoard, getReportById, countReportById } from "./report";
+import {
+  reportBoard,
+  getMyReport,
+  getReportById,
+  countReportById,
+} from "./report";
 
 const router = Router();
 // 게시글 좋아요
@@ -28,8 +33,9 @@ router.get("/myreply", tokens.loginCheck, myReplyBoard);
 
 //신고기능
 router.post("/report", tokens.loginCheck, reportBoard);
-router.get("/report", tokens.loginCheck, getReportById);
+router.get("/report/me", tokens.loginCheck, getMyReport);
 router.get("/report/count", tokens.loginCheck, countReportById);
+router.get("/report", tokens.loginCheck, getReportById);
 
 // 게시글 CRUD
 router.post("/", tokens.loginCheck, insertBoard);
