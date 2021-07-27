@@ -31,7 +31,7 @@ async function reportBoard(req: Request, res: Response) {
 }
 
 //자신이 신고한 신고목록 조회
-async function getReportById(req: Request, res: Response) {
+async function getMyReport(req: Request, res: Response) {
   try {
     const user_id = req.body.data.id;
     const rows = await db("SELECT * FROM report WHERE send_id=?", [user_id]);
@@ -67,4 +67,24 @@ async function countReportById(req: Request, res: Response) {
   }
 }
 
-export { reportBoard, getReportById, countReportById };
+async function getReportById(req: Request, res: Response) {
+  try {
+    const rows = await db("SELECT * FROM report WHERE recv_id=?", [
+      req.query.id,
+    ]);
+
+    const data = JSON.parse(JSON.stringify(rows));
+    const report = [];
+
+    data.forEach((value) => {
+      value.regdate = formatDate(value.regdate);
+      report.push(value);
+    });
+
+    res.send({ report, success: true });
+  } catch (err) {
+    res.status(500).send({ success: false });
+  }
+}
+
+export { reportBoard, getMyReport, countReportById, getReportById };
