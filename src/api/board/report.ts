@@ -69,19 +69,23 @@ async function countReportById(req: Request, res: Response) {
 
 async function getReportById(req: Request, res: Response) {
   try {
-    const rows = await db("SELECT * FROM report WHERE recv_id=?", [
-      req.query.id,
-    ]);
+    if (req.body.data.role === "master") {
+      const rows = await db("SELECT * FROM report WHERE recv_id=?", [
+        req.query.id,
+      ]);
 
-    const data = JSON.parse(JSON.stringify(rows));
-    const report = [];
+      const data = JSON.parse(JSON.stringify(rows));
+      const report = [];
 
-    data.forEach((value) => {
-      value.regdate = formatDate(value.regdate);
-      report.push(value);
-    });
+      data.forEach((value) => {
+        value.regdate = formatDate(value.regdate);
+        report.push(value);
+      });
 
-    res.send({ report, success: true });
+      res.send({ report, success: true });
+    } else {
+      res.status(400).send({ success: false });
+    }
   } catch (err) {
     res.status(500).send({ success: false });
   }
