@@ -60,7 +60,7 @@ async function validCheck(req: Request, res: Response) {
 }
 
 async function tokenRefresh(req: Request, res: Response) {
-    const ref = req.headers["authorization"];
+    const ref = req.body.token;
 
     if (!ref) return res.status(400).send({ success: false });
 
