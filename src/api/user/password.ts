@@ -40,7 +40,7 @@ async function sendMailer(email : string, password : string){
 }
 
 // 임시 비밀번호 전송
-async function findPassword(req: Request, res: Response){
+async function forgotPassword(req: Request, res: Response) {
     const conn = await pool.getConnection();
     try{
       const data = {
@@ -78,8 +78,6 @@ async function findPassword(req: Request, res: Response){
     }
 }
 
-async function forgotPassword(req: Request, res: Response) {}
-
 //password 수정
 async function setPassword(req: Request, res: Response) {
     try {
@@ -113,4 +111,4 @@ async function checkPassword(req: Request, res: Response) {
     }
 }
 
-export { findPassword, setPassword, checkPassword };
+export { forgotPassword, setPassword, checkPassword };

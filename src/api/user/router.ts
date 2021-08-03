@@ -5,7 +5,7 @@ import { deleteImage, imageUpload, showImage } from "./profile";
 import { confirmDupName, register } from "./register";
 import { insertStudent, checkStudent, deleteStudent, getStudent } from "./auth";
 import { controleRole } from "./role";
-import { findPassword, checkPassword, setPassword } from "./password";
+import { forgotPassword, checkPassword, setPassword } from "./password";
 
 const router = Router();
 
@@ -32,6 +32,6 @@ router.post("/auth/student/check", checkStudent);
 
 router.post("/password/check", tokens.loginCheck, checkPassword);
 router.post("/password/change", tokens.loginCheck, setPassword);
-router.post("/password/find", findPassword);
+router.post("/password/find", forgotPassword);
 
 export default router;
