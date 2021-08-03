@@ -14,12 +14,13 @@ export const registerScheme = yup.object({
     schoolnumber: yup.number().required(),
     role: yup.string().oneOf(["master", "leader", "student"]),
     year: yup.number().required(),
+    email: yup.string().required()
 });
 
 async function register(req: Request, res: Response) {
     try {
         const {
-            id,
+            id, 
             password,
             name,
             phone,
@@ -29,12 +30,13 @@ async function register(req: Request, res: Response) {
             schoolnumber,
             role,
             year,
+            email
         } = registerScheme.validateSync(req.body);
         const search = await db("SELECT id FROM user WHERE id=?", [id]);
         const hashPassword = await argon2.hash(password);
         if (!search[0]) {
             const rows = await db(
-                `INSERT INTO user (id, password, name, phone, birth, schoolgrade, schoolclass, schoolnumber, role, year) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+                `INSERT INTO user (id, password, name, phone, birth, schoolgrade, schoolclass, schoolnumber, role, year, email) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
                 [
                     id,
                     hashPassword,
@@ -46,6 +48,7 @@ async function register(req: Request, res: Response) {
                     schoolnumber,
                     role,
                     year,
+                    email
                 ]
             );
             res.send({ success: true });

@@ -5,13 +5,15 @@ import { deleteImage, imageUpload, showImage } from "./profile";
 import { confirmDupName, register } from "./register";
 import { insertStudent, checkStudent, deleteStudent, getStudent } from "./auth";
 import { controleRole } from "./role";
-import { checkPassword, setPassword } from "./password";
+import { forgotPassword, checkPassword, setPassword } from "./password";
 
 const router = Router();
 
 router.post("/login", login);
 router.post("/logout", tokens.loginCheck, logout);
 router.delete("/quit", tokens.loginCheck, userOut);
+
+
 
 router.post("/profile", tokens.loginCheck, imageUpload);
 router.get("/profile", showImage);
@@ -30,5 +32,6 @@ router.post("/auth/student/check", checkStudent);
 
 router.post("/password/check", tokens.loginCheck, checkPassword);
 router.post("/password/change", tokens.loginCheck, setPassword);
+router.post("/password/find", forgotPassword);
 
 export default router;
