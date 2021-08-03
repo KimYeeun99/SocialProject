@@ -9,7 +9,8 @@ export const studentScheme = yup.object({
     studentId : yup.string().required()
   });
 
-function getStudentId(year, sGrade, sClass, sNumber){
+function getStudentId(sGrade, sClass, sNumber){
+    const year = new Date().getFullYear() - (sGrade-1);
     var studentId = year + "" + sGrade;
 
     sClass = (sClass < 10) ? "0"+sClass : sClass;
@@ -43,7 +44,7 @@ async function insertStudent(req: Request, res: Response){
             await conn.beginTransaction();
             for(var i=0; i<data.length; i++){
                 const name = data[i].이름;
-                const studentId = getStudentId(data[i].입학년도, data[i].학년, data[i].반, data[i].번호);
+                const studentId = getStudentId(data[i].학년, data[i].반, data[i].번호);
                 const rows : any = await conn.query('SELECT student_id FROM authstudent WHERE name=? AND student_id=?',
                 [name, studentId]);
                 

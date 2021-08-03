@@ -27,6 +27,7 @@
         "multiparty": "^4.2.2",
         "mysql": "^2.18.1",
         "mysql2": "^2.2.5",
+        "nodemailer": "^6.6.3",
         "nodemon": "^2.0.6",
         "session": "^0.1.0",
         "ts-node": "^9.1.1",

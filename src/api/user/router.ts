@@ -5,12 +5,15 @@ import { deleteImage, imageUpload, showImage } from "./profile";
 import { confirmDupName, register } from "./register";
 import { insertStudent, checkStudent, deleteStudent, getStudent } from "./auth";
 import { controleRole } from "./role";
+import { findPassword } from "./password";
 
 const router = Router();
 
 router.post("/login", login);
 router.post("/logout", tokens.loginCheck, logout);
 router.delete("/quit", tokens.loginCheck, userOut);
+
+router.post("/findpassword", findPassword);
 
 router.post("/profile", tokens.loginCheck, imageUpload);
 router.get("/profile", showImage);
