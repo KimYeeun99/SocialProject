@@ -3,6 +3,8 @@ var app = require('../src/app');
 
 var token, refreshToken;
 
+var tempToken;
+
  function getdate(){
     var date = new Date();
     var yyyy = date.getFullYear().toString();
@@ -15,14 +17,39 @@ var token, refreshToken;
 const signInData = {
     id: 'appTest',
     password: '1234',
-    name: 'testName',
+    name: 'test1',
     phone: '010-1111-2222',
     birth: '2021-01-01',
     schoolgrade: 1,
-    schoolclass: 2,
-    schoolnumber: 3,
+    schoolclass: 1,
+    schoolnumber: 1,
+    role: 'master',
+    year: 2021,
+    email: 'Test@test.com'
+}
+
+const testData = {
+    id: 'tempUser',
+    password: '1234',
+    name: 'temp',
+    phone: '010-1111-2222',
+    birth: '2021-01-01',
+    schoolgrade: 1,
+    schoolclass: 1,
+    schoolnumber: 1,
     role: 'student',
-    year: 2021
+    year: 2021,
+    email: 'temp@temp.com'
+}
+
+const updateData = {
+    phone: '010-6666-7777',
+    birth: '2021-02-02',
+    schoolgrade: 2,
+    schoolclass: 2,
+    schoolnumber: 2,
+    year: 2022,
+    email: 'temp2@temp.com'
 }
 
 describe('회원가입', function () {
@@ -67,7 +94,26 @@ describe('로그인', function () {
     })
 })
 
-describe('프로필 사진', function () {
+describe('본인정보 및 프로필 사진', function () {
+    before(function(done){
+        request(app)
+        .post('/api/user/register')
+        .send(testData)
+        .expect(200, done);
+    });
+
+    before(function(done){
+        request(app)
+        .post('/api/user/login')
+        .send({id : testData.id, password : testData.password})
+        .expect(200, function(err, res){
+            if(err) throw err;
+
+            tempToken = res.body.token.access_token;
+            done();
+        }); 
+    })
+
     it('프로필 사진 등록', function (done) {
         request(app)
             .post('/api/user/profile')
@@ -88,6 +134,36 @@ describe('프로필 사진', function () {
             .delete('/api/user/profile')
             .set('Authorization', token)
             .expect(200, done)
+    })
+
+    it('본인 정보 조회', function(done){
+        request(app)
+        .get('/api/user/info')
+        .set('Authorization', tempToken)
+        .expect(200, done);
+    })
+
+    it('본인 정보 수정', function(done){
+        request(app)
+        .put('/api/user/info')
+        .set('Authorization', tempToken)
+        .send(updateData)
+        .expect(200, done);
+    })
+
+    it('학생 등급 변경 -> Master', function(done){
+        request(app)
+        .put('/api/user/update/role')
+        .set('Authorization', token)
+        .send({user_id : testData.id, role : "leader"})
+        .expect(200, done);
+    })
+
+    after(function(done){
+        request(app)
+        .delete('/api/user/quit')
+        .set('Authorization', tempToken)
+        .expect(200, done);
     })
 })
 
@@ -329,6 +405,83 @@ describe('토큰 기능', function() {
         request(app)
         .post('/api/auth/refresh')
         .send({token : refreshToken})
+        .expect(200, done);
+    })
+})
+
+describe('신고 기능', function(){
+
+})
+
+describe('학번 등록/인증', function(){
+    it('학번 등록 -> Master', function(done){
+        request(app)
+        .post('/api/user/auth/student')
+        .set('Authorization', token)
+        .attach('file', './test/test.xlsx')
+        .expect(200, done);
+    })
+
+    it('학번 인증하기', function(done){
+        request(app)
+        .post('/api/user/auth/student/check')
+        .send({
+            id : signInData.id,
+            name : signInData.name,
+            studentId : '202110101'
+        })
+        .expect(200, done);
+    })
+
+    it('학번 목록 조회 -> Master', function(done){
+        request(app)
+        .get('/api/user/auth/student')
+        .set('Authorization', token)
+        .expect(200, done);
+    })
+
+    it('학번 삭제 -> Master', function(done){
+        request(app)
+        .delete('/api/user/auth/student')
+        .set('Authorization', token)
+        .send({list : [
+            {
+                name : 'test1',
+                studentId : '202110101'
+            },
+            {
+                name : 'test2',
+                studentId : '202110102'
+            },
+            {
+                name : 'test3',
+                studentId : '202110103'
+            },
+            {
+                name : 'test4',
+                studentId : '202110104'
+            }
+        ]})
+        .expect(200, done);
+    })
+})
+
+describe('비밀번호 변경/찾기', function(){
+    it('임시 비밀번호 발급 --> 별도 확인 필요', function(){});
+
+    it('현재 패스워드 일치여부 확인', function(done){
+        request(app)
+        .post('/api/user/password/check')
+        .set('Authorization', token)
+        .send({password : "1234"})
+        .expect(200, done);
+    })
+
+    it('패스워드 변경', function(done){
+        request(app)
+        .post('/api/user/password/change')
+        .set('Authorization', token)
+        .send({password : "1234"})
         .expect(200, done);
     })
 })
