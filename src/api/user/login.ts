@@ -22,6 +22,7 @@ async function login(req: Request, res: Response) {
                 schoolnumber: rows[0].schoolnumber,
                 role: rows[0].role,
                 year: rows[0].year,
+                name: rows[0].name
             };
 
             const token = await tokens.createTokens(data);
