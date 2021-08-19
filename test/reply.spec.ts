@@ -62,8 +62,7 @@ describe('댓글 테스트', function(){
                 .send({ body: 'Test Reply' })
                 .expect(200, function (err, res) {
                     if (err) throw err;
-    
-                    replyId = res.body.data.insertId;
+                    replyId = res.body.data.reply_id;
                     done();
                 })
         })
@@ -73,7 +72,10 @@ describe('댓글 테스트', function(){
                 .post('/api/reply/' + insertId + '/' + replyId)
                 .set('Authorization', loginToken)
                 .send({ body: 'Test Child Reply' })
-                .expect(200, done);
+                .expect(200, function(err ,res){
+                    if(err) throw err;
+                    done();
+                });
         })
     
         it('댓글 조회', function (done) {

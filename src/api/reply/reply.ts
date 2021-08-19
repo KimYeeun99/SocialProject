@@ -24,17 +24,27 @@ async function insertReply(req: Request, res: Response) {
             [body, user_id, board_id, 0, 0]
         );
 
-        const data = JSON.parse(JSON.stringify(rows));
+        const check = JSON.parse(JSON.stringify(rows));
 
         await db("UPDATE reply SET parent_id=? WHERE reply_id=?", [
-            data.insertId,
-            data.insertId,
+            check.insertId,
+            check.insertId,
         ]);
+
+        const rows2 = await db(`SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
+        if((select count(reply_id) from replygood WHERE user_id=? AND replygood.reply_id=reply.reply_id) > 0 , 'Y', 'N') as goodCheck
+         FROM reply where board_id=? and reply_id=?`, [user_id, board_id, check.insertId]);
+
+        const data = JSON.parse(JSON.stringify(rows2));
+        
+        data[0].regdate = formatDate(data[0].regdate);
+
         res.json({
             success: true,
-            data: data,
+            data: data[0],
         });
     } catch (error) {
+        console.log(error);
         res.status(500).send({
             success: false,
         });
@@ -53,8 +63,19 @@ async function insertSubReply(req: Request, res: Response) {
             [body, user_id, board_id, parent_id, 1]
         );
 
+        const check = JSON.parse(JSON.stringify(rows));
+
+        const rows2 = await db(`SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
+        if((select count(reply_id) from replygood WHERE user_id=? AND replygood.reply_id=reply.reply_id) > 0 , 'Y', 'N') as goodCheck
+         FROM reply where board_id=? and reply_id=?`, [user_id, board_id, check.insertId]);
+
+        const data = JSON.parse(JSON.stringify(rows2));
+        
+        data[0].regdate = formatDate(data[0].regdate);
+
         res.json({
             success: true,
+            data: data[0]
         });
     } catch (error) {
         res.status(500).send({
