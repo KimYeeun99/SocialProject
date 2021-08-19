@@ -30,7 +30,7 @@ async function goodReply(req: Request, res: Response) {
         const reply_id = req.params.replyid;
 
         const check = await db(
-            "SELECT good_id FROM ReplyGood WHERE reply_id=? and user_id=?",
+            "SELECT good_id FROM replygood WHERE reply_id=? and user_id=?",
             [reply_id, user_id]
         );
 

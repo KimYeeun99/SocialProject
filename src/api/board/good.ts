@@ -9,7 +9,7 @@ async function goodBoard(req: Request, res: Response) {
         const board_id = req.params.id;
 
         const rows: any = await pool.query(
-            "SELECT good_id FROM BoardGood WHERE board_id=? and user_id=?",
+            "SELECT good_id FROM boardgood WHERE board_id=? and user_id=?",
             [board_id, user_id]
         );
 
