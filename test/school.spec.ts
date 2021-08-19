@@ -13,16 +13,29 @@ function getdate(){
 describe('급식/학사정보', function(){
     const date = getdate();
 
-    it('급식 조회 기능', function(done){
-        this.timeout(3000);
+    it('학사정보 조회 기능', function(done){
         request(app)
-        .get('/api/school/cafeteria?AA_YMD=' + date)
-        .expect(200, done);
+        .get('/api/school/schedule?AA_YMD=' + date)
+        .expect(200)
+        .end(function(err, res){
+            if(res.body.error != 'INFO-200 해당하는 데이터가 없습니다.'){
+                throw err;
+            }
+
+            return done();
+        })
     })
 
-    it('학사정보 조회 기능', function(done) {
+    it('급식 조회 기능', function(done) {
         request(app)
-        .get('/api/school/schedule?MSLV_FROM_YMD=' + date + '&MSLV_TO_YMD=' + date)
-        .expect(200, done)
+        .get('/api/school/cafeteria?MLSV_FROM_YMD=' + date + '&MLSV_TO_YMD=' + date)
+        .expect(200)
+        .end(function(err, res){
+            if(res.body.error != 'INFO-200 해당하는 데이터가 없습니다.'){
+                return done(err);
+            }
+
+            done();
+        })
     })
 })
