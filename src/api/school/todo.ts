@@ -31,12 +31,12 @@ async function getTodoList(req: Request, res: Response) {
         const month = req.query.month;
         const day = req.query.day;
 
-        const rows = await db(
+        const todoList = await db(
             "SELECT * FROM todolist WHERE user_id=? AND year=? AND month=? AND day=?",
             [user_id, year, month, day]
         );
 
-        res.send({ rows, success: true });
+        res.send({ todoList, success: true });
     } catch (error) {
         res.status(500).send({ error: error.message, success: false });
     }
