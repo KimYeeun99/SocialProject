@@ -7,6 +7,7 @@ import {
     getTodoList,
     delTodoList,
     updateTodoList,
+    checkTodoList,
 } from "./todo";
 
 const router = Router();
@@ -18,5 +19,7 @@ router.post("/todo", tokens.loginCheck, insertTodoList);
 router.get("/todo", tokens.loginCheck, getTodoList);
 router.put("/todo/:list_id", tokens.loginCheck, updateTodoList);
 router.delete("/todo/:list_id", tokens.loginCheck, delTodoList);
+
+router.get("/todo/:list_id", tokens.loginCheck, checkTodoList);
 
 export default router;
