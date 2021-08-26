@@ -66,7 +66,7 @@ describe('신고 기능 테스트', function(){
             .expect(200, function(err, res){
                 if (err) throw err;
     
-                    replyId = res.body.data.insertId;
+                    replyId = res.body.data.reply_id;
                     done();
             })
         })

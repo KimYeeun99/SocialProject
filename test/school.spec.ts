@@ -1,6 +1,22 @@
 import request from 'supertest';
 var app = require('../src/app');
 
+var loginToken
+
+const testData = {
+    id: 'schoolTest',
+    password: '1234',
+    name: 'test1',
+    phone: '010-1111-2222',
+    birth: '2021-01-01',
+    schoolgrade: 1,
+    schoolclass: 1,
+    schoolnumber: 1,
+    role: 'master',
+    year: 2021,
+    email: 'Test@test.com'
+}
+
 function getdate(){
     var date = new Date();
     var yyyy = date.getFullYear().toString();
@@ -36,6 +52,102 @@ describe('급식/학사정보', function(){
             }
 
             done();
+        })
+    })
+})
+
+describe('시간표 기능', function(){
+    describe("시간표 테스트", function(){
+        before(function(done){
+            request(app)
+            .post('/api/user/register')
+            .send(testData)
+            .expect(200, done);
+        })
+        
+        before(function(done){
+            request(app)
+            .post('/api/user/login')
+            .send({id: testData.id, password: testData.password})
+            .expect(200, function(err, res){
+                if(err) throw err;
+        
+                loginToken = res.body.token.access_token;
+                done();
+            })
+        })
+    
+        it('시간표 등록', function(done){
+            request(app)
+            .post('/api/school/timetable')
+            .set('Authorization', loginToken)
+            .send({
+                list : [{
+                    "subject" : "Math",
+                    "days" : "mon",
+                    "period" : 1
+                },
+                {
+                    "subject" : "Math",
+                    "days" : "tue",
+                    "period" : 2
+                },
+                {
+                    "subject" : "Math",
+                    "days" : "tue",
+                    "period" : 3
+                }]
+            })
+            .expect(200, done);
+        })
+    
+        it('시간표 조회', function(done){
+            request(app)
+            .get('/api/school/timetable')
+            .set('Authorization', loginToken)
+            .expect(200, done);
+        })
+    
+    
+        it('시간표 수정', function(done){
+            request(app)
+            .put('/api/school/timetable')
+            .set('Authorization', loginToken)
+            .send({
+                list : [{
+                    "subject" : "English",
+                    "days" : "mon",
+                    "period" : 1
+                    }
+                ]
+            })
+            .expect(200, done);
+        })
+    
+        it('시간표 삭제', function(done){
+            request(app)
+            .delete('/api/school/timetable')
+            .set('Authorization', loginToken)
+            .send({
+                list : [{
+                    "subject" : "Math",
+                    "days" : "tue",
+                    "period" : 2
+                },
+                {
+                    "subject" : "English",
+                    "days" : "mon",
+                    "period" : 1
+                }]
+            })
+            .expect(200, done);
+        })
+    
+        after(function(done){
+            request(app)
+            .delete('/api/user/quit')
+            .set('Authorization', loginToken)
+            .expect(200, done);
         })
     })
 })
