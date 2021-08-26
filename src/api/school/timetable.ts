@@ -19,12 +19,12 @@ async function insertTimeTable(req: Request, res: Response){
         await conn.beginTransaction();
 
 
-        for(var i=0; i<list.length; i++){
-            const {subject, days, period} = timeTableScheme.validateSync(list[i]);
+        list.forEach(async e => {
+            const {subject, days, period} = timeTableScheme.validateSync(e);
 
             await conn.query("INSERT INTO timetable (user_id, subject, days, period) VALUES(?, ?, ?, ?)",
             [user_id, subject, days, period]);
-        }
+        })
 
         await conn.commit();
         res.json({success: true});

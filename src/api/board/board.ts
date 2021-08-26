@@ -139,8 +139,12 @@ async function readOneBoard(req: Request, res: Response) {
         if (!rows[0]) {
             res.status(400).send({ success: false });
         } else {
-            const read = JSON.parse(JSON.stringify(rows[0]));
+            var read = JSON.parse(JSON.stringify(rows[0]));
             read[0].regdate = formatDate(read[0].regdate);
+            read[0]["userCheck"] = "N";
+            if(userId == read[0].user_id){
+                read[0]["userCheck"] = "Y";
+            }
 
             const rows2 = await pool.query(
                 "SELECT path FROM boardpath WHERE board_id = ?",
