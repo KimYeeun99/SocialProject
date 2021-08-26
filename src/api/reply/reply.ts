@@ -38,6 +38,7 @@ async function insertReply(req: Request, res: Response) {
         const data = JSON.parse(JSON.stringify(rows2));
         
         data[0].regdate = formatDate(data[0].regdate);
+        data[0]["userCheck"] = "Y";
 
         res.json({
             success: true,
@@ -72,6 +73,7 @@ async function insertSubReply(req: Request, res: Response) {
         const data = JSON.parse(JSON.stringify(rows2));
         
         data[0].regdate = formatDate(data[0].regdate);
+        data[0]["userCheck"] = "Y";
 
         res.json({
             success: true,
@@ -100,6 +102,11 @@ async function readAllReply(req: Request, res: Response) {
 
         list.forEach((value) => {
             value.regdate = formatDate(value.regdate);
+            value["userCheck"] = "N";
+            if(userId == value.user_id){
+                value["userCheck"] = "Y";
+            }
+
             data.push(value);
         });
 
