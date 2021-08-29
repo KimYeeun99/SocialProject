@@ -135,11 +135,11 @@ async function readOneBoard(req: Request, res: Response) {
         from board where board_id = ?`,
             [userId, userId, board_id]
         );
+        var read = JSON.parse(JSON.stringify(rows[0]));
 
-        if (!rows[0]) {
+        if (!read[0]) {
             res.status(400).send({ success: false });
         } else {
-            var read = JSON.parse(JSON.stringify(rows[0]));
             read[0].regdate = formatDate(read[0].regdate);
             read[0]["userCheck"] = "N";
             if(userId == read[0].user_id){

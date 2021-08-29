@@ -4,8 +4,7 @@ import { getCafeteria } from "./mealInfo";
 import { getSchedule } from "./schedule";
 import {
     insertTimeTable,
-    getTimeTable, 
-    updateTimeTable, 
+    getTimeTable,  
     deleteTimeTable
 } from "./timetable";
 
@@ -24,7 +23,6 @@ router.get("/schedule", getSchedule);
 
 router.post("/timetable", tokens.loginCheck, insertTimeTable);
 router.get("/timetable", tokens.loginCheck, getTimeTable);
-router.put("/timetable", tokens.loginCheck, updateTimeTable);
 router.delete("/timetable", tokens.loginCheck, deleteTimeTable);
 
 router.post("/todo", tokens.loginCheck, insertTodoList);
