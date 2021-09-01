@@ -46,7 +46,14 @@ describe('인증 테스트', function(){
             .attach('file', './test/test.xlsx')
             .expect(200, done);
         })
-    
+        
+        it('학번 목록 조회 -> Master', function(done){
+            request(app)
+            .get('/api/user/auth/student')
+            .set('Authorization', loginToken)
+            .expect(200, done);
+        })
+
         it('학번 인증하기', function(done){
             request(app)
             .post('/api/user/auth/student/check')
@@ -54,13 +61,6 @@ describe('인증 테스트', function(){
                 name : testData.name,
                 studentId : '202110101'
             })
-            .expect(200, done);
-        })
-    
-        it('학번 목록 조회 -> Master', function(done){
-            request(app)
-            .get('/api/user/auth/student')
-            .set('Authorization', loginToken)
             .expect(200, done);
         })
     

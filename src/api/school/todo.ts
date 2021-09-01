@@ -14,7 +14,7 @@ async function insertTodoList(req: Request, res: Response) {
         const { body, year, month, day } = todoSchema.validateSync(req.body);
         const user_id = req.body.data.id;
         const rows = await db(
-            "INSERT INTO todoList(user_id,body,year,month,day) VALUES(?,?,?,?,?)",
+            "INSERT INTO todolist(user_id,body,year,month,day) VALUES(?,?,?,?,?)",
             [user_id, body, year, month, day]
         );
 
