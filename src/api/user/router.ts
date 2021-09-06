@@ -1,9 +1,21 @@
 import { Router } from "express";
 import tokens from "../common/token";
 import { login, logout, userOut } from "./login";
-import { getUserInfo, updateUserInfo, deleteImage, imageUpload, showImage } from "./profile";
+import {
+    getUserInfo,
+    updateUserInfo,
+    deleteImage,
+    imageUpload,
+    showImage,
+} from "./profile";
 import { confirmDupName, register } from "./register";
-import { insertStudent, checkStudent, deleteStudent, getStudent } from "./auth";
+import {
+    insertStudent,
+    checkStudent,
+    deleteStudent,
+    getStudent,
+    getRegisterStudent,
+} from "./auth";
 import { controleRole } from "./role";
 import { forgotPassword, checkPassword, setPassword } from "./password";
 
@@ -13,8 +25,8 @@ router.post("/login", login);
 router.post("/logout", tokens.loginCheck, logout);
 router.delete("/quit", tokens.loginCheck, userOut);
 
-router.get('/info', tokens.loginCheck, getUserInfo);
-router.put('/info', tokens.loginCheck, updateUserInfo);
+router.get("/info", tokens.loginCheck, getUserInfo);
+router.put("/info", tokens.loginCheck, updateUserInfo);
 
 router.post("/profile", tokens.loginCheck, imageUpload);
 router.get("/profile", showImage);
@@ -28,6 +40,8 @@ router.put("/update/role", tokens.loginCheck, controleRole);
 router.post("/auth/student", tokens.loginCheck, insertStudent);
 router.get("/auth/student", tokens.loginCheck, getStudent);
 router.delete("/auth/student", tokens.loginCheck, deleteStudent);
+
+router.get("/auth/master/student", tokens.loginCheck, getRegisterStudent);
 
 router.post("/auth/student/check", checkStudent);
 
