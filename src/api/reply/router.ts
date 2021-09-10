@@ -9,7 +9,13 @@ import {
     insertReply,
 } from "./reply";
 import { goodCount, goodReply } from "./good";
-import { reportReply, getMyReplyReport, getReplyReportById, countReplyReportById } from './report'
+import {
+    reportReply,
+    getMyReplyReport,
+    getReplyReportById,
+    countReplyReportById,
+    getReplyReport,
+} from "./report";
 
 const router = Router();
 
@@ -25,6 +31,8 @@ router.post("/report", tokens.loginCheck, reportReply);
 router.get("/report/me", tokens.loginCheck, getMyReplyReport);
 router.get("/report/count", tokens.loginCheck, countReplyReportById);
 router.get("/report", tokens.loginCheck, getReplyReportById);
+
+router.get("/report/:page", tokens.loginCheck, getReplyReport);
 
 // 댓글 CRUD
 router.post("/:boardid", tokens.loginCheck, insertReply);
