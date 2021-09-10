@@ -57,7 +57,7 @@ async function forgotPassword(req: Request, res: Response) {
       const userData = JSON.parse(JSON.stringify(rows[0]));
 
       if(!userData[0]){
-        res.status(401).send({success: false});
+        return res.status(401).send({success: false});
       }
 
       const password = createTempPassword();

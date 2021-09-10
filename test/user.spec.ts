@@ -148,6 +148,13 @@ describe('사용자 기능 테스트', function(){
             .expect(200, done);
         })
     
+        it('등록된 학생 목록 조회 -> Master', function(done){
+            request(app)
+            .get('/api/user/auth/master/student')
+            .set('Authorization', token)
+            .expect(200, done);
+        })
+
         after(function(done){
             request(app)
             .delete('/api/user/quit')
