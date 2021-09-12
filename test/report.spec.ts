@@ -92,9 +92,16 @@ describe('신고 기능 테스트', function(){
                 .expect(200, done);
             })
     
-            it('게시판 신고현황 조회 -> Master', function(done){
+            it('게시판 신고목록 집계 -> Master', function(done){
                 request(app)
                 .get('/api/board/report/count')
+                .set('Authorization', loginToken)
+                .expect(200, done);
+            })
+
+            it('게시판 신고 목록 조회 -> Master', function(done){
+                request(app)
+                .get('/api/board/report/1')
                 .set('Authorization', loginToken)
                 .expect(200, done);
             })
@@ -128,9 +135,16 @@ describe('신고 기능 테스트', function(){
                 .expect(200, done);
             })
     
-            it('댓글 신고현황 조회 -> Master', function(done){
+            it('댓글 신고목록 집계 -> Master', function(done){
                 request(app)
-                .get('/api/board/report/count')
+                .get('/api/reply/report/count')
+                .set('Authorization', loginToken)
+                .expect(200, done);
+            })
+
+            it('댓글 신고 목록 조회 -> Master', function(done){
+                request(app)
+                .get('/api/reply/report/1')
                 .set('Authorization', loginToken)
                 .expect(200, done);
             })
