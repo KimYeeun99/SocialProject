@@ -10,7 +10,7 @@ const roleSchema = yup.object({
 async function controleRole(req: Request, res: Response) {
     try {
         if (req.body.data.role != "master") {
-            res.status(400).send({ success: false });
+            return res.status(403).send({ success: false });
         }
         const { user_id, role } = roleSchema.validateSync(req.body);
         const row = await db("UPDATE user SET role=? WHERE id=?", [

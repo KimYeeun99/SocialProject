@@ -1,8 +1,8 @@
 import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
-import { db } from "../../db/db";
+import { pool } from "../../db/db";
 import moment from "moment";
-import tokens from "../common/token";
+import { sendMessage } from "../common/message";
 
 export const replyScheme = yup.object({
     body: yup.string().required(),
@@ -13,76 +13,113 @@ function formatDate(date) {
 }
 
 async function insertReply(req: Request, res: Response) {
+    const conn = await pool.getConnection();
     try {
+        await conn.beginTransaction();
         const { body } = replyScheme.validateSync(req.body);
 
         const board_id = req.params.boardid;
         const user_id = req.body.data.id;
 
-        const rows = await db(
+        const rows = await conn.query(
             "INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)",
             [body, user_id, board_id, 0, 0]
         );
 
-        const check = JSON.parse(JSON.stringify(rows));
+        const check = JSON.parse(JSON.stringify(rows[0]));
 
-        await db("UPDATE reply SET parent_id=? WHERE reply_id=?", [
+        await conn.query("UPDATE reply SET parent_id=? WHERE reply_id=?", [
             check.insertId,
             check.insertId,
         ]);
 
-        const rows2 = await db(`SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
+        const rows2 = await conn.query(`SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
         if((select count(reply_id) from replygood WHERE user_id=? AND replygood.reply_id=reply.reply_id) > 0 , 'Y', 'N') as goodCheck
          FROM reply where board_id=? and reply_id=?`, [user_id, board_id, check.insertId]);
 
-        const data = JSON.parse(JSON.stringify(rows2));
+        const data = JSON.parse(JSON.stringify(rows2[0]));
         
         data[0].regdate = formatDate(data[0].regdate);
         data[0]["userCheck"] = "Y";
 
+        const rows3 = await conn.query("SELECT user_id FROM board WHERE board_id=?", [board_id]);
+
+        const messageData = JSON.parse(JSON.stringify(rows3[0]));
+
+        await sendMessage(messageData[0].user_id, {
+            title: "게시글에 새로운 댓글이 달렸습니다.",
+            body : body
+        });
+
+        await conn.commit();
         res.json({
             success: true,
             data: data[0],
         });
+
     } catch (error) {
+        await conn.rollback();
         console.log(error);
         res.status(500).send({
             success: false,
         });
+    } finally{
+        conn.release();
     }
 }
 
 async function insertSubReply(req: Request, res: Response) {
+    const conn = await pool.getConnection();
     try {
+        await conn.beginTransaction();
         const parent_id = req.params.replyid;
         const board_id = req.params.boardid;
         const user_id = req.body.data.id;
         const { body } = replyScheme.validateSync(req.body);
 
-        const rows = await db(
+        const row = await conn.query(`SELECT reply_id FROM reply WHERE reply_id=?`, [parent_id]);
+        const valid = JSON.parse(JSON.stringify(row[0]));
+
+        if(!valid[0]){
+            conn.release();
+            return res.status(400).send({success: false});
+        }
+
+        const rows = await conn.query(
             "INSERT INTO reply (body, user_id, board_id, parent_id, level) VALUES (?, ?, ?, ?, ?)",
             [body, user_id, board_id, parent_id, 1]
         );
 
-        const check = JSON.parse(JSON.stringify(rows));
+        const check = JSON.parse(JSON.stringify(rows[0]));
 
-        const rows2 = await db(`SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
+        const rows2 = await conn.query(`SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
         if((select count(reply_id) from replygood WHERE user_id=? AND replygood.reply_id=reply.reply_id) > 0 , 'Y', 'N') as goodCheck
          FROM reply where board_id=? and reply_id=?`, [user_id, board_id, check.insertId]);
 
-        const data = JSON.parse(JSON.stringify(rows2));
+        const data = JSON.parse(JSON.stringify(rows2[0]));
         
         data[0].regdate = formatDate(data[0].regdate);
         data[0]["userCheck"] = "Y";
 
+        const rows3 = await conn.query("SELECT user_id FROM reply WHERE reply_id=?", [parent_id]);
+        const messageData = JSON.parse(JSON.stringify(rows3[0]));
+        await sendMessage(messageData[0].user_id, {
+            title : "댓글에 새로운 댓글이 달렸습니다.",
+            body : body
+        });
+
+        await conn.commit();
         res.json({
             success: true,
             data: data[0]
         });
     } catch (error) {
+        await conn.rollback();
         res.status(500).send({
             success: false,
         });
+    } finally{
+        conn.release();
     }
 }
 
@@ -90,14 +127,14 @@ async function readAllReply(req: Request, res: Response) {
     try {
         const userId = req.body.data.id;
         const boardId = req.params.boardid;
-        const rows = await db(
+        const rows = await pool.query(
             `SELECT reply.*, (select count(reply_id) from replygood WHERE replygood.reply_id=reply.reply_id) as goodCount,
             if((select count(reply_id) from replygood WHERE user_id=? AND replygood.reply_id=reply.reply_id) > 0 , 'Y', 'N') as goodCheck
              FROM reply where board_id=? order by parent_id, level, regdate`,
             [userId, boardId]
         );
 
-        var list = JSON.parse(JSON.stringify(rows));
+        var list = JSON.parse(JSON.stringify(rows[0]));
         const data = [];
 
         list.forEach((value) => {
@@ -136,66 +173,90 @@ async function readAllReply(req: Request, res: Response) {
 }
 
 async function updateReply(req: Request, res: Response) {
+    const conn = await pool.getConnection();
     try {
+        await conn.beginTransaction();
         const user_id = req.body.data.id;
         const reply_id = req.params.replyid;
         const { body } = replyScheme.validateSync(req.body);
 
-        const check = await db(
+        const row = await conn.query(
             "SELECT reply_id FROM reply WHERE reply_id=? and user_id=?",
             [reply_id, user_id]
         );
 
-        if (!check[0]) return res.status(401).send({ success: false });
+        const check = JSON.parse(JSON.stringify(row[0]));
 
-        const rows = await db("UPDATE reply SET body=? WHERE reply_id = ?", [
+        if (!check[0]){
+            conn.release();
+            return res.status(401).send({ success: false });
+        }
+
+        await conn.query("UPDATE reply SET body=? WHERE reply_id = ?", [
             body,
             reply_id,
         ]);
 
+        await conn.commit();
         res.json({
             success: true,
         });
     } catch (error) {
+        await conn.rollback();
         res.status(500).send({
             success: false,
         });
+    } finally{
+        conn.release();
     }
 }
 
 async function deleteReply(req: Request, res: Response) {
+    const conn = await pool.getConnection();
     try {
+        await conn.beginTransaction();
         const user_id = req.body.data.id;
         const reply_id = req.params.replyid;
-        const check = await db(
+        const rows = await conn.query(
             "SELECT reply_id FROM reply WHERE reply_id=? and user_id=?",
             [reply_id, user_id]
         );
 
-        if (!check[0]) return res.status(401).send({ success: false });
+        const check = JSON.parse(JSON.stringify(rows[0]));
 
-        const rows = await db(
+        if (!check[0]){
+            conn.release();
+            return res.status(401).send({ success: false });
+        } 
+
+        await conn.query(
             "DELETE FROM reply WHERE reply_id=? OR parent_id=?",
             [reply_id, reply_id]
         );
 
+        await conn.commit();
         res.json({
             success: true,
         });
     } catch (error) {
+        await conn.rollback();
         res.status(500).send({
             success: false,
         });
+    } finally{
+        conn.release();
     }
 }
 
 async function replyCount(req: Request, res: Response) {
     try {
         const boardId = req.params.boardid;
-        const rows = await db(
+        const row = await pool.query(
             "select count(reply_id) as replycount from reply where board_id=?",
             [boardId]
         );
+
+        const rows = JSON.parse(JSON.stringify(row[0]));
 
         var count = 0;
 

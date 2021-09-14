@@ -24,18 +24,18 @@ function getStudentId(sGrade, sClass, sNumber) {
 // 학번, 이름 등록
 async function insertStudent(req: Request, res: Response) {
     const conn = await pool.getConnection();
-    try {
-        if (req.body.data.role !== "master") {
-            return res.status(403).send({ success: false });
-        }
+    if (req.body.data.role !== "master") {
+        return res.status(403).send({ success: false });
+    }
 
-        var data;
+    var data;
 
-        const form = new multiparty.Form({
-            autoFiles: false,
-        });
+    const form = new multiparty.Form({
+        autoFiles: false,
+    });
 
-        form.on("file", async function (name: any, file: any) {
+    form.on("file", async function (name: any, file: any) {
+        try{
             const workSheet = xlsx.readFile(file.path);
             const sheetName = Object.keys(workSheet.Sheets);
 
@@ -57,28 +57,28 @@ async function insertStudent(req: Request, res: Response) {
                 const check = JSON.parse(JSON.stringify(rows[0]));
 
                 if (check[0]) {
-                    return res.status(400).send({ success: false });
+                    continue;
                 }
                 await conn.query("INSERT INTO authstudent VALUES(?, ?)", [
                     studentId,
                     name,
                 ]);
             }
+        
+        } catch(error){
+            res.status(500).send({success: false});
+        } finally{
+            conn.release();
+        }
 
-            await conn.commit();
-        });
+        await conn.commit();
+    });
 
-        form.on("close", () => {
-            res.send({ success: true });
-        });
+    form.on("close", () => {
+        res.send({success: true});
+    })
 
-        form.parse(req);
-    } catch (error) {
-        await conn.rollback();
-        res.status(500).send({ success: false });
-    } finally {
-        conn.release();
-    }
+    form.parse(req);
 }
 
 // 학번 인증

@@ -62,7 +62,7 @@ async function countReportById(req: Request, res: Response) {
 
             res.send({ count, success: true });
         } else {
-            res.status(400).send({ success: false });
+            res.status(403).send({ success: false });
         }
     } catch (err) {
         res.status(500).send({ success: false });
@@ -86,7 +86,7 @@ async function getReportById(req: Request, res: Response) {
 
             res.send({ board, success: true });
         } else {
-            res.status(400).send({ success: false });
+            res.status(403).send({ success: false });
         }
     } catch (err) {
         res.status(500).send({ success: false });
@@ -112,7 +112,7 @@ async function getReport(req: Request, res: Response) {
 
             res.send({ board, success: true });
         } else {
-            res.status(400).send({ success: false });
+            res.status(403).send({ success: false });
         }
     } catch (err) {
         res.status(500).send({ success: false });

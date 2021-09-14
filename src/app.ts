@@ -5,6 +5,7 @@ import board from "./api/board/router";
 import reply from "./api/reply/router";
 import school from "./api/school/router";
 import token from "./api/common/token";
+import { insertDevice } from "./api/common/device";
 import "dotenv/config";
 
 const app = express();
@@ -30,6 +31,9 @@ app.use("/api/school", school);
 // 토큰 인증
 app.post("/api/auth/refresh", token.tokenRefresh);
 app.get("/api/auth/valid", token.validCheck);
+
+// 장치 등록
+app.post("/api/device", token.loginCheck, insertDevice);
 
 app.listen(app.get("port"), () => {
     console.log("start");

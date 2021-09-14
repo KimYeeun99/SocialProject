@@ -53,16 +53,15 @@ async function getMyReplyReport(req: Request, res: Response) {
 }
 
 async function countReplyReportById(req: Request, res: Response) {
-    try {
+  try {
         if (req.body.data.role === "master") {
             const count = await db(
-                "SELECT recv_id, count(*) as count FROM replyreport GROUP BY recv_id",
-                []
-            );
+            "SELECT recv_id, count(*) as count FROM replyreport GROUP BY recv_id",
+            []);
 
             res.send({ count, success: true });
         } else {
-            res.status(400).send({ success: false });
+            res.status(403).send({ success: false });
         }
     } catch (err) {
         res.status(500).send({ success: false });
@@ -86,7 +85,7 @@ async function getReplyReportById(req: Request, res: Response) {
 
             res.send({ reply, success: true });
         } else {
-            res.status(400).send({ success: false });
+            res.status(403).send({ success: false });
         }
     } catch (err) {
         res.status(500).send({ success: false });
@@ -112,7 +111,7 @@ async function getReplyReport(req: Request, res: Response) {
 
             res.send({ reply, success: true });
         } else {
-            res.status(400).send({ success: false });
+            res.status(403).send({ success: false });
         }
     } catch (err) {
         res.status(500).send({ success: false });
