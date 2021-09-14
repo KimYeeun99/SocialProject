@@ -179,7 +179,7 @@ describe('사용자 기능 테스트', function(){
             request(app)
             .post('/api/user/password/change')
             .set('Authorization', token)
-            .send({password : "1234"})
+            .send({password : "12345"})
             .expect(200, done);
         })
     })
@@ -194,13 +194,13 @@ describe('사용자 기능 테스트', function(){
     })
     
     describe('회원탈퇴', function () {
-        var token;
+        var token
         before(function (done) {
             request(app)
                 .post('/api/user/login')
                 .send({
                     id: signInData.id,
-                    password: signInData.password
+                    password: "12345"
                 })
                 .expect(200, function (err, res) {
                     if (err) throw err;

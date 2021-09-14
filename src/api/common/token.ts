@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { db } from "../../db/db";
+import { pool } from "../../db/db";
 
 const secretKey = process.env.TOKEN_SECRET;
 const accessExpireTime = 60 * 60 * 2; // 2 hours (Access 토큰 만료기한)
@@ -21,7 +21,7 @@ async function createTokens(data) {
     };
 }
 
-function deleteTokens(req: Request, res: Response) {
+async function deleteTokens(req: Request, res: Response) {
     var token = req.headers["authorization"];
     jwt.verify(token, secretKey, async function (err, decode) {
         if (err) {
@@ -31,6 +31,7 @@ function deleteTokens(req: Request, res: Response) {
     });
 }
 
+// 로그인 체크
 async function loginCheck(
     req: Request,
     res: Response,
@@ -38,15 +39,21 @@ async function loginCheck(
 ) {
     const token = req.headers["authorization"];
 
-    jwt.verify(token, secretKey, function (err, decode) {
+    jwt.verify(token, secretKey, async function (err, decode) {
         if (err) {
             return res.status(401).send({ success: false });
         }
+        const check = await getRefToken(decode.data.id);
+        if(!check){
+            return res.status(401).send({success: false});
+        }
+
         req.body.data = decode.data;
         next();
     });
 }
 
+//토큰 유효성 체크
 async function validCheck(req: Request, res: Response) {
     const token = req.headers["authorization"];
 
@@ -64,7 +71,8 @@ async function tokenRefresh(req: Request, res: Response) {
 
     if (!ref) return res.status(400).send({ success: false });
 
-    const rows = await db("SELECT * FROM token WHERE token=?", [ref]);
+    const temp = await pool.query("SELECT * FROM token WHERE token=?", [ref]);
+    const rows = JSON.parse(JSON.stringify(temp[0]));
 
     if (rows[0]) {
         const token = rows[0].token;
@@ -92,6 +100,7 @@ async function tokenRefresh(req: Request, res: Response) {
     }
 }
 
+//로그인 상태 체크 (비로그인도 접근해야 할 경우)
 async function loginStatusCheck(req: Request, res: Response, next: NextFunction){
     const token = req.headers["authorization"];
 
@@ -120,13 +129,14 @@ async function createRefToken(data) {
     const refToken = jwt.sign({ data: data }, secretKey, {
         expiresIn: refreshExpireTime,
     });
-    await db("INSERT INTO token VALUES(?, ?)", [data.id, refToken]);
+    await pool.query("INSERT INTO token VALUES(?, ?)", [data.id, refToken]);
 
     return refToken;
 }
 
 async function getRefToken(id) {
-    const rows = await db("SELECT token FROM token WHERE id=?", [id]);
+    const temp = await pool.query("SELECT token FROM token WHERE id=?", [id]);
+    const rows = JSON.parse(JSON.stringify(temp[0]));
 
     var refToken = "";
 
@@ -138,7 +148,7 @@ async function getRefToken(id) {
 }
 
 async function deleteRefToken(id: string) {
-    const rows = await db("DELETE FROM token WHERE id=?", [id]);
+    await pool.query("DELETE FROM token WHERE id=?", [id]);
 }
 
 function refreshTimeCheck(time) {

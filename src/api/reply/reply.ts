@@ -2,7 +2,7 @@ import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import { pool } from "../../db/db";
 import moment from "moment";
-import tokens from "../common/token";
+import { sendMessage } from "../common/message";
 
 export const replyScheme = yup.object({
     body: yup.string().required(),
@@ -42,11 +42,21 @@ async function insertReply(req: Request, res: Response) {
         data[0].regdate = formatDate(data[0].regdate);
         data[0]["userCheck"] = "Y";
 
+        const rows3 = await conn.query("SELECT user_id FROM board WHERE board_id=?", [board_id]);
+
+        const messageData = JSON.parse(JSON.stringify(rows3[0]));
+
+        await sendMessage(messageData[0].user_id, {
+            title: "게시글에 새로운 댓글이 달렸습니다.",
+            body : body
+        });
+
         await conn.commit();
         res.json({
             success: true,
             data: data[0],
         });
+
     } catch (error) {
         await conn.rollback();
         console.log(error);
@@ -90,6 +100,13 @@ async function insertSubReply(req: Request, res: Response) {
         
         data[0].regdate = formatDate(data[0].regdate);
         data[0]["userCheck"] = "Y";
+
+        const rows3 = await conn.query("SELECT user_id FROM reply WHERE reply_id=?", [parent_id]);
+        const messageData = JSON.parse(JSON.stringify(rows3[0]));
+        await sendMessage(messageData[0].user_id, {
+            title : "댓글에 새로운 댓글이 달렸습니다.",
+            body : body
+        });
 
         await conn.commit();
         res.json({
