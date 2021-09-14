@@ -6,7 +6,12 @@ async function insertDevice(req: Request, res: Response){
     try{
         const deviceToken = req.body.deviceToken;
         const userId = req.body.data.id;
-        const curDevice = getDevice(userId);
+        const curDevice = await getDevice(userId);
+
+
+        if(curDevice == ""){
+            await pool.query("INSERT INTO devices VALUES(?, ?)", [userId, deviceToken]);
+        }
 
         if(curDevice != deviceToken){
             await pool.query("UPDATE devices SET device_id=? WHERE user_id=?", [deviceToken, userId]);
