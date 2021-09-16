@@ -87,17 +87,16 @@ describe('학생 기능 테스트', function(){
                 list : [{
                     "subject" : "Math",
                     "days" : "mon",
-                    "period" : 1
+                    "period" : 1,
+                    "location" : "2-2",
+                    "teacher" : "test"
                 },
                 {
                     "subject" : "Math",
                     "days" : "tue",
-                    "period" : 2
-                },
-                {
-                    "subject" : "Math",
-                    "days" : "tue",
-                    "period" : 3
+                    "period" : 2,
+                    "location" : "2-3",
+                    "teacher" : "test2"
                 }]
             })
             .expect(200, done);
@@ -116,16 +115,14 @@ describe('학생 기능 테스트', function(){
             .post('/api/school/timetable')
             .set('Authorization', loginToken)
             .send({
-                list : [{
-                    "subject" : "English",
-                    "days" : "mon",
-                    "period" : 1
-                    },
+                list : [
                     {
-                        "subject" : "Korean",
-                        "days" : "thr",
-                        "period" : 7
-                    }
+                    "subject" : "English",
+                    "days" : "tue",
+                    "period" : 2,
+                    "location" : "2-4",
+                    "teacher" : "test3"
+                }
                 ]
             })
             .expect(200, done);
@@ -137,12 +134,10 @@ describe('학생 기능 테스트', function(){
             .set('Authorization', loginToken)
             .send({
                 list : [{
-                    "subject" : "Math",
                     "days" : "tue",
                     "period" : 2
                 },
                 {
-                    "subject" : "English",
                     "days" : "mon",
                     "period" : 1
                 }]
