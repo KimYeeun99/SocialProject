@@ -50,7 +50,7 @@ async function getTimeTable(req: Request, res: Response){
     try{
         const user_id = req.body.data.id;
 
-        const rows = await pool.query("SELECT subject, days, period FROM timetable WHERE user_id=?", [user_id]);
+        const rows = await pool.query("SELECT subject, days, period, location, teacher FROM timetable WHERE user_id=?", [user_id]);
 
         const data = JSON.parse(JSON.stringify(rows[0]));
 
