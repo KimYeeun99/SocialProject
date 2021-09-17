@@ -22,10 +22,16 @@ async function getCafeteria(req: Request, res: Response) {
         const mealInfo = [];
         rows.forEach((value) => {
             const dish = value.DDISH_NM.split("<br/>");
+            var year = value.MLSV_YMD.substr(0, 4);
+            var month = value.MLSV_YMD.substr(4, 2);
+            var day = value.MLSV_YMD.substr(6, 2);
+
             const data = {
-                MLSV_YMD: value.MLSV_YMD,
-                DDISH_NM: dish,
-                CAL_INFO: value.CAL_INFO,
+                year: year,
+                month: month,
+                day: day,
+                dish: dish,
+                cal_info: value.CAL_INFO,
             };
             mealInfo.push(data);
         });
