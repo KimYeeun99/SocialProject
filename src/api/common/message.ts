@@ -17,7 +17,8 @@ async function sendMessage(userId: string, data: any) {
     const message = {
         notification: {
             title : data.title,
-            body : data.body
+            body : data.body,
+            board_id : data.board_id
         },
         token: registrationToken
     };
