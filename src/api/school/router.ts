@@ -1,12 +1,8 @@
 import { Router } from "express";
 import tokens from "../common/token";
-import { getCafeteria } from "./mealInfo";
+import { getCafeteria, getMonthCafeteria } from "./mealInfo";
 import { getSchedule } from "./schedule";
-import {
-    insertTimeTable,
-    getTimeTable,  
-    deleteTimeTable
-} from "./timetable";
+import { insertTimeTable, getTimeTable, deleteTimeTable } from "./timetable";
 
 import {
     insertTodoList,
@@ -19,6 +15,7 @@ import {
 const router = Router();
 
 router.get("/cafeteria", getCafeteria);
+router.get("/cafeteria/month", getMonthCafeteria);
 router.get("/schedule", getSchedule);
 
 router.post("/timetable", tokens.loginCheck, insertTimeTable);
