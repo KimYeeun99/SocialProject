@@ -63,11 +63,11 @@ async function getMonthCafeteria(req: Request, res: Response) {
         });
 
         const mealInfo = {
-            "1주차": [],
-            "2주차": [],
-            "3주차": [],
-            "4주차": [],
-            "5주차": [],
+            1: [],
+            2: [],
+            3: [],
+            4: [],
+            5: [],
         };
 
         rows.forEach((value) => {
@@ -84,16 +84,7 @@ async function getMonthCafeteria(req: Request, res: Response) {
                 cal_info: value.CAL_INFO,
             };
 
-            if (weekOfMonth(moment(value.MLSV_YMD)) == 1)
-                mealInfo["1주차"].push(data);
-            else if (weekOfMonth(moment(value.MLSV_YMD)) == 2)
-                mealInfo["2주차"].push(data);
-            else if (weekOfMonth(moment(value.MLSV_YMD)) == 3)
-                mealInfo["3주차"].push(data);
-            else if (weekOfMonth(moment(value.MLSV_YMD)) == 4)
-                mealInfo["4주차"].push(data);
-            else if (weekOfMonth(moment(value.MLSV_YMD)) == 5)
-                mealInfo["5주차"].push(data);
+            mealInfo[weekOfMonth(moment(value.MLSV_YMD))].push(data);
         });
 
         res.send({ mealInfo, success: true });
