@@ -20,7 +20,9 @@ async function sendMessage(userId: string, data: any) {
             body : data.body
         },
         data : {
-            board_id : data.board_id
+            board_id : data.board_id,
+            title : data.title,
+            body : data.body
         },
         token: registrationToken
     };
