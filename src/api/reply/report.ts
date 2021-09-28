@@ -5,7 +5,8 @@ import tokens from "../common/token";
 import moment from "moment";
 
 export const reportScheme = yup.object({
-    reply_id: yup.string().required(),
+    board_id: yup.string().required(),
+    reply_id: yup.number().required(),
     recv_id: yup.string().required(), //댓글 글쓴이
     body: yup.string().required(), //신고내용
 });
@@ -17,11 +18,13 @@ function formatDate(date) {
 //신고하기
 async function reportReply(req: Request, res: Response) {
     try {
-        const { reply_id, recv_id, body } = reportScheme.validateSync(req.body);
+        const { board_id, reply_id, recv_id, body } = reportScheme.validateSync(
+            req.body
+        );
 
         const rows = await db(
-            "INSERT INTO replyreport (reply_id, recv_id, send_id, body) values (?, ?, ?, ?)",
-            [reply_id, recv_id, req.body.data.id, body]
+            "INSERT INTO replyreport (board_id, reply_id, recv_id, send_id, body) values (?, ?, ?, ?, ?)",
+            [board_id, reply_id, recv_id, req.body.data.id, body]
         );
 
         res.send({ success: true });
@@ -53,11 +56,12 @@ async function getMyReplyReport(req: Request, res: Response) {
 }
 
 async function countReplyReportById(req: Request, res: Response) {
-  try {
+    try {
         if (req.body.data.role === "master") {
             const count = await db(
-            "SELECT recv_id, count(*) as count FROM replyreport GROUP BY recv_id",
-            []);
+                "SELECT recv_id, count(*) as count FROM replyreport GROUP BY recv_id",
+                []
+            );
 
             res.send({ count, success: true });
         } else {
