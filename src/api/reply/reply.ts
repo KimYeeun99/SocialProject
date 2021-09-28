@@ -217,6 +217,7 @@ async function deleteReply(req: Request, res: Response) {
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
+        const role = req.body.data.role;
         const user_id = req.body.data.id;
         const reply_id = req.params.replyid;
         const rows = await conn.query(
@@ -226,10 +227,7 @@ async function deleteReply(req: Request, res: Response) {
 
         const check = JSON.parse(JSON.stringify(rows[0]));
 
-        if (!check[0]){
-            conn.release();
-            return res.status(401).send({ success: false });
-        } 
+        if ((role != 'master') && !check[0]) return res.status(401).send({ success: false });
 
         await conn.query(
             "DELETE FROM reply WHERE reply_id=? OR parent_id=?",
