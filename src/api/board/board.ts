@@ -236,15 +236,17 @@ async function deleteBoard(req: Request, res: Response) {
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
+        const role = req.body.data.role;
         const board_id = req.params.id;
         const rows = await conn.query(
             "SELECT user_id FROM board WHERE board_id=? AND user_id=?",
             [board_id, req.body.data.id]
         );
 
+
         const check = JSON.parse(JSON.stringify(rows[0]));
 
-        if (!check[0]) return res.status(401).send({ success: false });
+        if ((role != 'master') && !check[0]) return res.status(401).send({ success: false });
 
         const path = await conn.query(
             "SELECT path FROM boardpath WHERE board_id=?",
