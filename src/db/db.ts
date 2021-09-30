@@ -5,6 +5,7 @@ async function db(sql, params) {
     try {
         const connection = await mysql.createConnection(config);
         const [rows, fields] = await connection.execute(sql, params);
+        connection.destroy();
         return rows;
     } catch (error) {
         throw error;
