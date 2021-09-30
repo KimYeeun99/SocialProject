@@ -121,6 +121,7 @@ describe('신고 기능 테스트', function(){
                 .post('/api/reply/report')
                 .set('Authorization', loginToken)
                 .send({
+                    board_id : insertId,
                     reply_id : replyId,
                     recv_id : "Test",
                     body : "Test body"
