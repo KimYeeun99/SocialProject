@@ -3,6 +3,7 @@ import * as yup from "yup";
 import { pool } from "../../db/db";
 import moment from "moment";
 import { sendMessage } from "../common/message";
+import {logger} from "../../log/logger";
 
 export const replyScheme = yup.object({
     body: yup.string().required(),
@@ -53,6 +54,7 @@ async function insertReply(req: Request, res: Response) {
         });
 
         await conn.commit();
+        logger.info(`Reply Added ${user_id}`);
         res.json({
             success: true,
             data: data[0],
@@ -60,7 +62,7 @@ async function insertReply(req: Request, res: Response) {
 
     } catch (error) {
         await conn.rollback();
-        console.log(error);
+        logger.error("[insertReply]" + error);
         res.status(500).send({
             success: false,
         });
@@ -111,12 +113,14 @@ async function insertSubReply(req: Request, res: Response) {
         });
 
         await conn.commit();
+        logger.info(`Reply Added ${user_id}`);
         res.json({
             success: true,
             data: data[0]
         });
     } catch (error) {
         await conn.rollback();
+        logger.error("[insertSubReply]" + error);
         res.status(500).send({
             success: false,
         });
@@ -167,7 +171,7 @@ async function readAllReply(req: Request, res: Response) {
             data: tree,
         });
     } catch (error) {
-        console.log(error);
+        logger.error("[readAllReply]" + error);
         res.status(500).send({
             success: false,
         });
@@ -200,11 +204,13 @@ async function updateReply(req: Request, res: Response) {
         ]);
 
         await conn.commit();
+        logger.info(`Reply Updated ${user_id}`);
         res.json({
             success: true,
         });
     } catch (error) {
         await conn.rollback();
+        logger.error("[updateReply]" + error);
         res.status(500).send({
             success: false,
         });
@@ -235,11 +241,13 @@ async function deleteReply(req: Request, res: Response) {
         );
 
         await conn.commit();
+        logger.info(`Reply Deleted ${user_id}`);
         res.json({
             success: true,
         });
     } catch (error) {
         await conn.rollback();
+        logger.error("[deleteReply]" + error);
         res.status(500).send({
             success: false,
         });
@@ -267,6 +275,7 @@ async function replyCount(req: Request, res: Response) {
             replycount: count,
         });
     } catch (error) {
+        logger.error("[replyCount]" + error);
         res.status(500).send({
             success: false,
         });

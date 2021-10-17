@@ -1,6 +1,7 @@
 import {Request, Response, Router} from 'express';
 import {pool} from '../../db/db';
 import * as yup from 'yup';
+import {logger} from "../../log/logger";
 
 export const timeTableScheme = yup.object({
     subject : yup.string().required(),
@@ -37,8 +38,9 @@ async function insertTimeTable(req: Request, res: Response){
         })
         await conn.commit();
         res.json({success: true});
-    } catch(err){
+    } catch(error){
         await conn.rollback();
+        logger.error("[insertTimetable]" + error);
         res.status(500).send({success: false});
     } finally{
         conn.release();
@@ -69,7 +71,8 @@ async function getTimeTable(req: Request, res: Response){
             };
         })
         res.json({table : table});
-    } catch(err){
+    } catch(error){
+        logger.error("[getTimetable]" + error);
         res.status(500).send({success: false});
     }
 
@@ -97,8 +100,9 @@ async function deleteTimeTable(req: Request, res: Response) {
 
         await conn.commit();
         res.json({success: true});
-    } catch(err){
+    } catch(error){
         await conn.rollback();
+        logger.error("[deleteTimetable]" + error);
         res.status(500).send({success: false});
     } finally{
         conn.release();

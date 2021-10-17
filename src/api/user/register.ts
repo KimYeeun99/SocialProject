@@ -2,6 +2,7 @@ import { Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../../db/db";
 import argon2 from "argon2";
+import {logger} from "../../log/logger";
 
 export const registerScheme = yup.object({
     id: yup.string().required(),
@@ -56,6 +57,7 @@ async function register(req: Request, res: Response) {
             res.status(400).send({ success: false });
         }
     } catch (error) {
+        logger.error("[register]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -71,6 +73,7 @@ async function confirmDupName(req: Request, res: Response) {
             res.send({ success: true });
         }
     } catch (error) {
+        logger.error("[register/confirmDupName]" + error);
         res.status(500).send({ success: false });
     }
 }

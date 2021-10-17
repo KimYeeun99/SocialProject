@@ -1,6 +1,7 @@
 var admin = require("firebase-admin");
 var serviceAccount = require("../../../adminsdk.json");
 import {getDevice} from './device';
+import {logger} from "../../log/logger";
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -32,10 +33,10 @@ async function sendMessage(userId: string, data: any) {
     await admin.messaging().send(message)
         .then((response) => {
             // Response is a message ID string.
-            console.log('Successfully sent message:', response);
+            logger.info('Successfully sent message:' + response)
         })
         .catch((error) => {
-            console.log('Error sending message:', error);
+            logger.error("[SendMessging]" + error);
     });
 }
 

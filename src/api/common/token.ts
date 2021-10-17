@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { pool } from "../../db/db";
+import { logger } from "../../log/logger";
 
 const secretKey = process.env.TOKEN_SECRET;
 const accessExpireTime = 60 * 60 * 2; // 2 hours (Access 토큰 만료기한)
@@ -15,6 +16,7 @@ async function createTokens(data) {
     }
     var refresh = await createRefToken(data);
 
+    logger.info(`Login-${data.id}`);
     return {
         access_token: access,
         refresh_token: refresh,
@@ -27,7 +29,10 @@ async function deleteTokens(req: Request, res: Response) {
         if (err) {
             return res.status(401).send({ success: false });
         }
+        const userId = decode.data.id;
         await deleteRefToken(decode.data.id);
+
+        logger.info(`Logout-${userId}`);
     });
 }
 

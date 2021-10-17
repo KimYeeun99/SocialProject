@@ -1,6 +1,7 @@
 import { Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../../db/db";
+import {logger} from "../../log/logger";
 
 const roleSchema = yup.object({
     user_id: yup.string().required(),
@@ -18,7 +19,8 @@ async function controleRole(req: Request, res: Response) {
             user_id,
         ]);
         res.send({ success: true });
-    } catch (err) {
+    } catch (error) {
+        logger.error(error);
         res.status(500).send({ success: false });
     }
 }

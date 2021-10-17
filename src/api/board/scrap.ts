@@ -1,7 +1,7 @@
 import { Router, Response, Request, NextFunction } from "express";
 import moment from "moment";
-import tokens from "../common/token";
 import { pool } from "../../db/db";
+import {logger} from "../../log/logger";
 
 function formatDate(date) {
     return moment(date).format("YYYY-MM-DD HH:mm:ss");
@@ -38,6 +38,7 @@ async function scrapBoard(req: Request, res: Response) {
             });
         }
     } catch (error) {
+        logger.error(error);
         res.status(500).send({
             success: false,
         });
@@ -70,6 +71,7 @@ async function readScrapBoard(req: Request, res: Response) {
             data: list,
         });
     } catch (error) {
+        logger.error(error);
         res.status(500).send({
             success: false,
         });
@@ -95,6 +97,7 @@ async function scrapCount(req: Request, res: Response) {
             scrapCount: count,
         });
     } catch (error) {
+        logger.error(error);
         res.status(500).send({
             success: false,
         });

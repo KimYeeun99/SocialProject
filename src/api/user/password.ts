@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import {pool} from '../../db/db';
 import argon2 from 'argon2';
 import { db } from "../../db/db";
-import * as crypto from "crypto";
+import {logger} from "../../log/logger";
 
 function createTempPassword(){
     const password = Math.random().toString(36).slice(2);
@@ -34,7 +34,9 @@ async function sendMailer(email : string, password : string){
             <h3>임시 비밀번호 : ${password}</h3>
             `
         })
+
     } catch(error){
+        logger.error('[password/sendEmail]' + error);
         throw "Email Send Error";
     }
 }
@@ -68,10 +70,13 @@ async function forgotPassword(req: Request, res: Response) {
       await sendMailer(userData[0].email, password);
       await conn.commit();
 
+      logger.info(`SendEmail By Temporary Pass ${userData[0].email}`);
+
       res.json({succecss: true});
 
     } catch(error){
         await conn.rollback();
+        logger.error("[password/forgot]" + error);
         res.status(500).send({success: false});
     } finally{
         conn.release();
@@ -91,6 +96,7 @@ async function setPassword(req: Request, res: Response) {
 
         res.send({ success: true });
     } catch (error) {
+        logger.error("[password/set]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -107,6 +113,7 @@ async function checkPassword(req: Request, res: Response) {
         }
         return res.status(400).send({ success: false });
     } catch (error) {
+        logger.error("[password/check]" + error);
         res.status(500).send({ success: false });
     }
 }

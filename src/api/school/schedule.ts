@@ -1,5 +1,6 @@
 import { Router, Response, Request } from "express";
 import Neis from "@my-school.info/neis-api";
+import {logger} from "../../log/logger";
 
 const neis = new Neis({
   KEY: process.env.NEIS_KEY,
@@ -21,6 +22,7 @@ async function getSchedule(req: Request, res: Response) {
 
     res.send({ schedule, success: true });
   } catch (error) {
+    logger.error("[schedule]" + error);
     res.status(500).send({ error: error.message, success: false });
   }
 }
