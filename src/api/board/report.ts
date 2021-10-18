@@ -1,8 +1,8 @@
 import { Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../../db/db";
-import tokens from "../common/token";
 import moment from "moment";
+import {logger} from "../../log/logger";
 
 export const reportScheme = yup.object({
     board_id: yup.string().required(),
@@ -25,7 +25,8 @@ async function reportBoard(req: Request, res: Response) {
         );
 
         res.send({ success: true });
-    } catch (err) {
+    } catch (error) {
+        logger.error("[reportBoard]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -47,7 +48,8 @@ async function getMyReport(req: Request, res: Response) {
         });
 
         res.send({ report, success: true });
-    } catch (err) {
+    } catch (error) {
+        logger.error("[getMyReport]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -64,7 +66,8 @@ async function countReportById(req: Request, res: Response) {
         } else {
             res.status(403).send({ success: false });
         }
-    } catch (err) {
+    } catch (error) {
+        logger.error("[countReportById]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -88,7 +91,8 @@ async function getReportById(req: Request, res: Response) {
         } else {
             res.status(403).send({ success: false });
         }
-    } catch (err) {
+    } catch (error) {
+        logger.error("[getBoardReportById]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -114,7 +118,8 @@ async function getReport(req: Request, res: Response) {
         } else {
             res.status(403).send({ success: false });
         }
-    } catch (err) {
+    } catch (error) {
+        logger.error("[getBoardReport]" + error);
         res.status(500).send({ success: false });
     }
 }

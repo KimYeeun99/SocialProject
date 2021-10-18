@@ -1,5 +1,6 @@
 import { Response, Request } from "express";
 import { db } from "../../db/db";
+import {logger} from "../../log/logger";
 
 async function goodCount(req: Request, res: Response) {
     try {
@@ -18,6 +19,7 @@ async function goodCount(req: Request, res: Response) {
             goodcount: count,
         });
     } catch (error) {
+        logger.error("[reply/good/goodCount]" + error);
         res.status(400).send({
             success: false,
         });
@@ -53,6 +55,7 @@ async function goodReply(req: Request, res: Response) {
             });
         }
     } catch (error) {
+        logger.error("[reply/good/goodReply]" + error);
         res.status(500).send({
             success: false,
         });

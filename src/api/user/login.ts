@@ -3,6 +3,7 @@ import * as yup from "yup";
 import { db } from "../../db/db";
 import tokens from "../common/token";
 import argon2 from "argon2";
+import {logger} from "../../log/logger";
 
 export const loginScheme = yup.object({
     id: yup.string().required(),
@@ -36,6 +37,7 @@ async function login(req: Request, res: Response) {
             res.send({ success: false });
         }
     } catch (error) {
+        logger.error("[login]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -45,6 +47,7 @@ async function logout(req: Request, res: Response) {
         await tokens.deleteTokens(req, res);
         res.send({ success: true });
     } catch (error) {
+        logger.error("[logout] " + error);
         res.status(500).send({ success: false });
     }
 }
@@ -56,7 +59,7 @@ async function userOut(req: Request, res: Response) {
         ]);
         res.send({ success: true });
     } catch (error) {
-        console.log(error);
+        logger.error("[userOut]" + error);
         res.status(500).send({ success: false });
     }
 }

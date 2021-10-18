@@ -7,6 +7,7 @@ import { MulterRequest } from "../common/upload";
 import moment from 'moment';
 import * as yup from "yup";
 import tokens from '../common/token';
+import {logger} from "../../log/logger";
 
 function formatDate(date) {
     return moment(date).format("YYYY-MM-DD HH:mm:ss");
@@ -39,6 +40,7 @@ async function getUserInfo(req: Request, res: Response){
         data : data});
 
     } catch(error){
+        logger.error("[profile/getUserInfo]" + error);
         res.status(500).send({success: false});
     }
 }
@@ -82,6 +84,7 @@ async function updateUserInfo(req: Request, res: Response){
         })
 
     } catch(error){
+        logger.error("[profile/updateUserInfo]" + error);
         res.status(500).send({success: false});
     }
 }
@@ -119,6 +122,7 @@ async function imageUpload(req: MulterRequest, res: Response) {
 
                 res.send({ success: true });
             } catch (error) {
+                logger.error("[profile/imgUpload]" + error);
                 res.status(500).send({ success: false });
             }
         }
@@ -141,6 +145,7 @@ async function showImage(req: Request, res: Response) {
             res.status(204).json({ success: true });
         }
     } catch (error) {
+        logger.error("[profile/showImage]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -162,6 +167,7 @@ async function deleteImage(req: Request, res: Response) {
             res.status(400).send({ success: false });
         }
     } catch (error) {
+        logger.error("[profile/deleteImage]" + error);
         res.status(500).send({ success: false });
     }
 }

@@ -7,19 +7,13 @@ import school from "./api/school/router";
 import token from "./api/common/token";
 import { insertDevice } from "./api/common/device";
 import "dotenv/config";
+import {logger} from "./log/logger";
 
 const app = express();
 
 app.set("port", process.env.PORT || 3000);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.get("/", async (req, res) => {
-    const rows = await db("SELECT * FROM user", []);
-    const user1 = rows[0].id;
-    console.log(user1);
-    res.send(rows);
-});
 
 app.use(express.static("public"));
 app.use("/api/user", user);
@@ -36,6 +30,7 @@ app.get("/api/auth/valid", token.validCheck);
 app.post("/api/device", token.loginCheck, insertDevice);
 
 app.listen(app.get("port"), () => {
+    logger.info("SocialServer Start")
     console.log("start");
 });
 

@@ -2,13 +2,13 @@ import { Router, Response, Request, NextFunction } from "express";
 import * as yup from "yup";
 import moment from "moment";
 import { Board } from "../../model/board";
-import tokens from "../common/token";
 import { board_img } from "../common/upload";
 import { BOARD_PATH } from "../common/upload";
 import fs from "fs";
 import { MulterRequest } from "../common/upload";
 import { pool } from "../../db/db";
 import { db } from "../../db/db";
+import {logger} from "../../log/logger";
 
 export const boardScheme = yup.object({
     title: yup.string().required(),
@@ -46,9 +46,11 @@ async function insertBoard(req: MulterRequest, res: Response) {
             }
 
             await conn.commit();
+            logger.info(`Create ${type} Board - ${user_id}`);
             res.send({ success: true, data: rows[0] });
         } catch (error) {
             await conn.rollback();
+            logger.error("[insertBoard]" + error);
             res.status(500).send({
                 success: false,
             });
@@ -84,6 +86,7 @@ async function searchBoard(req: Request, res: Response) {
             data: list,
         });
     } catch (error) {
+        logger.error("[searchBoard]" + error);
         res.status(500).send({
             success: false,
         });
@@ -115,6 +118,7 @@ async function readAllBoard(req: Request, res: Response) {
             data: list,
         });
     } catch (error) {
+        logger.error("[readAllBoard]" + error);
         res.status(500).send({
             success: false,
         });
@@ -164,6 +168,7 @@ async function readOneBoard(req: Request, res: Response) {
             });
         }
     } catch (error) {
+        logger.error("[readOneBoard]" + error);
         res.status(500).send({
             success: false,
         });
@@ -218,12 +223,14 @@ async function updateBoard(req: MulterRequest, res: Response) {
 
             await conn.commit();
 
+            logger.info(`Update Board - ${userId}`);
             res.json({
                 success: true,
             });
         });
     } catch (error) {
         await conn.rollback();
+        logger.error("[updateBoard]" + error);
         res.status(500).send({
             success: false,
         });
@@ -266,11 +273,14 @@ async function deleteBoard(req: Request, res: Response) {
             board_id,
         ]);
         await conn.commit();
+
+        logger.info(`Delete Board - ${req.body.data.id}`);
         res.json({
             success: true,
         });
     } catch (error) {
         await conn.rollback();
+        logger.error("[deleteBoard]" + error);
         res.status(500).send({
             success: false,
         });
@@ -305,6 +315,7 @@ async function myReplyBoard(req: Request, res: Response) {
             data: list,
         });
     } catch (error) {
+        logger.error("[myReplyBoard]" + error);
         res.status(500).send({
             success: false,
         });

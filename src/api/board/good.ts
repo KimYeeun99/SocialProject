@@ -1,7 +1,7 @@
 import { Router, Response, Request, NextFunction } from "express";
-import tokens from "../common/token";
 import { pool } from "../../db/db";
-import { db } from "../../db/db";
+import {logger} from "../../log/logger";
+
 
 async function goodBoard(req: Request, res: Response) {
     try {
@@ -34,6 +34,7 @@ async function goodBoard(req: Request, res: Response) {
             });
         }
     } catch (error) {
+        logger.error("[goodBoard]" + error);
         res.status(500).send({
             success: false,
         });
@@ -58,6 +59,7 @@ async function goodCount(req: Request, res: Response) {
             goodCount: count,
         });
     } catch (error) {
+        logger.error("[goodCount]" + error);
         res.status(500).send({
             success: false,
         });

@@ -1,6 +1,7 @@
 import { Router, Response, Request } from "express";
 import * as yup from "yup";
 import { db } from "../../db/db";
+import {logger} from "../../log/logger";
 
 export const todoSchema = yup.object({
     body: yup.string().required(),
@@ -20,6 +21,7 @@ async function insertTodoList(req: Request, res: Response) {
 
         res.send({ success: true });
     } catch (error) {
+        logger.error("[insertTodo]" + error);
         res.status(500).send({ error: error.message, success: false });
     }
 }
@@ -38,6 +40,7 @@ async function getTodoList(req: Request, res: Response) {
 
         res.send({ todoList, success: true });
     } catch (error) {
+        logger.error("[getTodo]" + error);
         res.status(500).send({ error: error.message, success: false });
     }
 }
@@ -65,6 +68,7 @@ async function updateTodoList(req: Request, res: Response) {
 
         res.send({ success: true });
     } catch (error) {
+        logger.error("[updateTodo]" + error);
         res.status(500).send({ error: error.message, success: false });
     }
 }
@@ -87,6 +91,7 @@ async function delTodoList(req: Request, res: Response) {
 
         res.send({ success: true });
     } catch (error) {
+        logger.error("[deleteTodo]" + error);
         res.status(500).send({ error: error.message, success: false });
     }
 }
@@ -117,6 +122,7 @@ async function checkTodoList(req: Request, res: Response) {
             return res.status(401).send({ success: false });
         }
     } catch (error) {
+        logger.error("[checkTodo]" + error);
         res.status(500).send({ error: error.message, success: false });
     }
 }

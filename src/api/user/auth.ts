@@ -3,6 +3,7 @@ import { pool } from "../../db/db";
 import * as yup from "yup";
 import multiparty from "multiparty";
 import xlsx from "xlsx";
+import {logger} from "../../log/logger";
 
 export const studentScheme = yup.object({
     name: yup.string().required(),
@@ -66,6 +67,7 @@ async function insertStudent(req: Request, res: Response) {
             }
         
         } catch(error){
+            logger.error("[auth/insertStudent]" + error);
             res.status(500).send({success: false});
         } finally{
             conn.release();
@@ -95,6 +97,7 @@ async function checkStudent(req: Request, res: Response) {
 
         res.send({ success: true });
     } catch (error) {
+        logger.error("[auth/checkStudent]" + error);
         res.status(500).send({ success: false });
     }
 }
@@ -114,6 +117,7 @@ async function getStudent(req: Request, res: Response) {
             data: data,
         });
     } catch (error) {
+        logger.error("[auth/getStudent]" + error);
         return res.status(500).send({ success: false });
     }
 }
@@ -142,6 +146,7 @@ async function deleteStudent(req: Request, res: Response) {
         res.send({ success: true });
     } catch (error) {
         await conn.rollback();
+        logger.error("[auth/deleteStudent]" + error);
         res.status(500).send({ success: false });
     } finally {
         conn.release();
@@ -166,6 +171,7 @@ async function getRegisterStudent(req: Request, res: Response) {
             data: data,
         });
     } catch (error) {
+        logger.error("[auth/getRegisterStudent]" + error);
         return res.status(500).send({ success: false });
     }
 }
