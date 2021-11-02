@@ -5,6 +5,7 @@ import board from "./api/board/router";
 import reply from "./api/reply/router";
 import school from "./api/school/router";
 import token from "./api/common/token";
+import notice from "./api/notice/router";
 import { insertDevice } from "./api/common/device";
 import "dotenv/config";
 import {logger} from "./log/logger";
@@ -20,6 +21,7 @@ app.use("/api/user", user);
 app.use("/api/board", board);
 app.use("/api/reply", reply);
 app.use("/api/school", school);
+app.use("/api/notice", notice);
 
 
 // 토큰 인증
