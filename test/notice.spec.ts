@@ -18,10 +18,24 @@ const noticeUser = {
     email: 'notice@notice.com'
 }
 
-const noticeData = {
+const noticeData = [{
     title : "Notice Title",
     body : "Notice Body",
     board_id : 0
+}, {
+    title : "Notice Title2",
+    body : "Notice Body2",
+    board_id : 0
+}, {
+    title : "Notice Title3",
+    body : "Notice Body3",
+    board_id : 0
+}]
+
+const checkData = {
+    "Notice Title" : noticeData[0],
+    "Notice Title2" : noticeData[1],
+    "Notice Title3" : noticeData[2]
 }
 
 describe('알림 기능', function(){
@@ -59,7 +73,7 @@ describe('알림 기능', function(){
         .expect(200, function(err, res){
             if(err) throw err;
 
-            noticeData.board_id = res.body.data.insertId;
+            noticeData.forEach(value => value.board_id = res.body.data.insertId);
             done();
         });
     })
@@ -68,7 +82,7 @@ describe('알림 기능', function(){
         request(app)
         .post('/api/notice')
         .set('Authorization', token)
-        .send(noticeData)
+        .send({list:noticeData})
         .expect(200, function(err, res){
             if(err) throw err;
             should(res.body.success).be.exactly(true);
@@ -83,13 +97,18 @@ describe('알림 기능', function(){
         .expect(200, function(err, res){
             if(err) throw err;
             
-            should(res.body.data[0].title).be.exactly(noticeData.title);
-            should(res.body.data[0].body).be.exactly(noticeData.body);
-            should(res.body.data[0].board_id).be.exactly(noticeData.board_id);
-            should(res.body.data[0].type).be.exactly("free");
-            should.exist(res.body.data[0].regdate);
+            const data = res.body.data;
 
-            done();
+            data.forEach((element, index) => {
+                should(element.title).be.exactly(checkData[element.title].title);
+                should(element.body).be.exactly(checkData[element.title].body);
+                should(element.board_id).be.exactly(checkData[element.title].board_id);
+                should(element.type).be.exactly("free");
+                should.exist(element.regdate);
+                if(index == data.length-1){
+                    done();
+                }
+            })            
         })
     })
 
