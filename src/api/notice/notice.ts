@@ -17,11 +17,18 @@ export const noticeScheme = yup.object({
 async function createNotice(req: Request, res: Response){
     try{
         const userId = req.body.data.id;
-        const {title, body, board_id} = noticeScheme.validateSync(req.body);
 
-        await pool.query('INSERT INTO notice (title, body, board_id, user_id) VALUES(?, ?, ?, ?)', [title, body, board_id, userId]);
+        const list: Array<any> = req.body.list;
 
-        res.json({success: true});        
+        list.forEach(async function(data, index){
+            const {title, body, board_id} = noticeScheme.validateSync(data);
+            await pool.query('INSERT INTO notice (title, body, board_id, user_id) VALUES(?, ?, ?, ?)',
+             [title, body, board_id, userId]);
+
+             if(index == list.length-1){
+                res.json({success: true});
+             }
+        })
     } catch(error){
         logger.error("[createNotice]" + error);
         return res.status(500).send({success: false});
@@ -32,7 +39,11 @@ async function createNotice(req: Request, res: Response){
 async function getNoticeList(req: Request, res: Response){
     try{
         const userId = req.body.data.id;
-        const rows = await pool.query('SELECT N.title, N.body, N.board_id, B.type, N.regdate FROM notice as N left join board as B on N.board_id=B.board_id WHERE N.user_id=?', [userId]);
+        const rows = await pool.query(`SELECT N.title, N.body, N.board_id, B.type, N.regdate 
+        FROM notice as N left join board as B on N.board_id=B.board_id 
+        WHERE N.user_id=?
+        ORDER BY N.regdate desc`,
+         [userId]);
 
         const data = JSON.parse(JSON.stringify(rows[0]));
         data.forEach((value) => {
