@@ -1,6 +1,6 @@
 var admin = require("firebase-admin");
 var serviceAccount = require("../../../adminsdk.json");
-import {getDevice} from './device';
+import {getDevice, getAllDevice} from './device';
 import {logger} from "../../log/logger";
 
 admin.initializeApp({
@@ -29,12 +29,37 @@ async function sendMessage(userId: string, data: any) {
     await admin.messaging().send(message)
         .then((response) => {
             // Response is a message ID string.
-            logger.info('Successfully sent message:' + response)
+            logger.info('[SendMessaging] Successfully sent message')
         })
         .catch((error) => {
             logger.error("[SendMessging]" + error);
     });
 }
 
-export {sendMessage}
+async function sendAllMessage(data : any) {
+    const registrationTokens = await getAllDevice();
+
+    if(registrationTokens.length == 0){
+        return;
+    }
+
+    const message = {
+        data : {
+            board_id : data.board_id,
+            title : data.title,
+            body : data.body
+        },
+        tokens: registrationTokens
+    };
+    
+    await admin.messaging().sendMulticast(message)
+        .then((response) => {
+            logger.info('[SendAllMessaging] Successfully sent message');
+        })
+        .catch((error) => {
+            logger.error("[SendAllMessging]" + error);
+    });
+}
+
+export {sendMessage, sendAllMessage}
 

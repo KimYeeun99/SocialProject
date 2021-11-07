@@ -9,6 +9,7 @@ import { MulterRequest } from "../common/upload";
 import { pool } from "../../db/db";
 import { db } from "../../db/db";
 import {logger} from "../../log/logger";
+import { sendAllMessage, sendMessage } from "../common/message";
 
 export const boardScheme = yup.object({
     title: yup.string().required(),
@@ -46,6 +47,15 @@ async function insertBoard(req: MulterRequest, res: Response) {
             }
 
             await conn.commit();
+
+            if(type == "notice"){
+                await sendAllMessage({
+                    title: "학생회 공지 게시판을 확인해 주세요",
+                    body : title,
+                    board_id : insertId + ""
+                })
+            }
+
             logger.info(`Create ${type} Board - ${user_id}`);
             res.send({ success: true, data: rows[0] });
         } catch (error) {

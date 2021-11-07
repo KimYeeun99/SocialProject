@@ -50,7 +50,7 @@ async function insertReply(req: Request, res: Response) {
         await sendMessage(messageData[0].user_id, {
             title: "게시글에 새로운 댓글이 달렸습니다.",
             body : body,
-            board_id : board_id
+            board_id : board_id + ""
         });
 
         await conn.commit();
@@ -109,7 +109,7 @@ async function insertSubReply(req: Request, res: Response) {
         await sendMessage(messageData[0].user_id, {
             title : "댓글에 새로운 댓글이 달렸습니다.",
             body : body,
-            board_id : board_id
+            board_id : board_id + ""
         });
 
         await conn.commit();

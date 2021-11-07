@@ -5,8 +5,7 @@ const logDir = path.join(__dirname, "..", "..", "logFile");
 
 
 const format = winston.format.combine(
-    winston.format.timestamp({ format : "YYYY-MM-DD HH:MM:SS |"}),
-    winston.format.colorize({all: true}),
+    winston.format.timestamp({ format : "YYYY-MM-DD HH:mm:ss |"}),
     winston.format.printf(
         (info) => `${info.timestamp} [${info.level}] : ${info.message}`
     )
