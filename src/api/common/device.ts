@@ -44,4 +44,23 @@ async function getDevice(userId : string){
     
 }
 
-export {insertDevice, getDevice};
+// 장치 전체 조회
+async function getAllDevice(){
+    try{
+        const rows = await pool.query("SELECT device_id FROM devices", []);
+        const check = JSON.parse(JSON.stringify(rows[0]));
+
+        const list = [];
+
+        for (const value of check) {
+            list.push(value.device_id);
+        }
+        console.log(list);
+        return list;
+    } catch(error){
+        logger.error("[getAllDevice]" + error);
+        throw error;
+    }
+}
+
+export {insertDevice, getDevice, getAllDevice};
