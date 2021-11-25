@@ -2,7 +2,7 @@ import { Router, Response, Request } from "express";
 import Neis from "@my-school.info/neis-api";
 import { resolve } from "path";
 import moment from "moment";
-import {logger} from "../../log/logger";
+import { logger } from "../../log/logger";
 
 const neis = new Neis({
     KEY: process.env.NEIS_KEY,
@@ -15,7 +15,7 @@ const nowDate = moment().utc(true);
 async function getCafeteria(req: Request, res: Response) {
     try {
         const school = await neis.getSchoolInfo({
-            SCHUL_NM: "상명고등학교",
+            SCHUL_NM: "상명대학교사범대학부속여자고등학교",
         });
 
         const rows = await neis.getMealInfo({
@@ -54,7 +54,7 @@ async function getCafeteria(req: Request, res: Response) {
 async function getMonthCafeteria(req: Request, res: Response) {
     try {
         const school = await neis.getSchoolInfo({
-            SCHUL_NM: "상명고등학교",
+            SCHUL_NM: "상명대학교사범대학부속여자고등학교",
         });
 
         const rows = await neis.getMealInfo({
